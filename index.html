@@ -38,7 +38,7 @@
     body {
       font-family: 'Inter', sans-serif;
     }
-    /* Scrollbar minimalista y sobrio */
+    /* Scrollbar minimalista y corporativo */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -54,6 +54,10 @@
       background: #D1D5DB;
     }
   </style>
+
+  <!-- MÓDULOS DE ARQUITECTURA DESACOPLADA (SOLID: SRP & CONFIGURACIÓN EXTERNA) -->
+  <script src="SpaceConfig.js"></script>
+  <script src="ReservationService.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
 
@@ -87,7 +91,7 @@
       <div class="flex items-center gap-6">
         <div class="hidden md:flex items-center gap-2 text-xs text-gray-500">
           <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-          <span>Periodo Académico Activo: <strong class="text-gray-900">2026-I</strong></span>
+          <span>Periodo Académico Activo: <strong id="header-period" class="text-gray-900">2026-I</strong></span>
         </div>
 
         <!-- Avatar de Usuario -->
@@ -148,14 +152,14 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span>Diagnóstico UX</span>
+            <span>Arquitectura & UX</span>
           </button>
         </div>
 
         <!-- Panel de control de demostración en Sidebar -->
         <div class="px-6 pt-4 border-t border-orange-400 border-opacity-40">
           <p class="text-[11px] font-bold uppercase tracking-wider text-white opacity-80 mb-3">
-            Prueba de Notificaciones
+            Prueba Factory Method
           </p>
           <div class="flex flex-col gap-2">
             <button onclick="triggerApprovedToast()" class="w-full py-2 px-3 text-xs font-semibold text-orange-500 bg-white rounded-lg shadow-sm hover:bg-orange-50 transition-all duration-200 ease-in-out text-center">
@@ -193,7 +197,7 @@
               <div class="flex items-center gap-3">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 shadow-sm">
                   <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                  Sede Principal: Calle 42
+                  Sede Principal: <span id="header-campus">Calle 42</span>
                 </span>
               </div>
             </div>
@@ -202,7 +206,7 @@
           <!-- GRID PRINCIPAL DE RESERVA -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- COLUMNA IZQUIERDA: FORMULARIO BASE Y CALENDARIO ANTI-INTUITIVO (8 Cols) -->
+            <!-- COLUMNA IZQUIERDA: FORMULARIO BASE Y CALENDARIO ANTI-INTUITIVO (7 Cols) -->
             <div class="lg:col-span-7 flex flex-col">
 
               <!-- D. TARJETA DE CONTENIDO 1: PARÁMETROS DEL ESPACIO -->
@@ -219,37 +223,33 @@
 
                 <div class="p-6 pt-0 space-y-4">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 2. ELIMINACIÓN DE HARD CODING: Renderizado Dinámico de Edificios -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Edificio / Sede
                       </label>
-                      <select id="select-building" onchange="handleBuildingChange()" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
+                      <select id="select-building" onchange="handleBuildingSelect(this.value)" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione Edificio...</option>
-                        <option value="A">Edificio A - Ingenierías y TI</option>
-                        <option value="B">Edificio B - Ciencias Administrativas</option>
-                        <option value="C">Edificio C - Innovación y Talleres</option>
+                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
 
+                    <!-- 2. ELIMINACIÓN DE HARD CODING: Renderizado Dinámico de Salones -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Salón / Laboratorio
                       </label>
-                      <select id="select-room" onchange="handleRoomChange()" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
+                      <select id="select-room" onchange="handleRoomSelect(this.value)" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione Salón...</option>
-                        <option value="LAB-301">Lab 301 - Redes y Ciberseguridad (Cap. 35)</option>
-                        <option value="LAB-302">Lab 302 - Desarrollo de Software (Cap. 40)</option>
-                        <option value="AUD-101">Auditorio Central (Cap. 120)</option>
-                        <option value="AULA-204">Aula 204 - Magistral (Cap. 45)</option>
+                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- D. TARJETA DE CONTENIDO 2: CALENDARIO ANTI-INTUITIVO (PROBLEMÁTICA UX) -->
+              <!-- D. TARJETA DE CONTENIDO 2: CALENDARIO ANTI-INTUITIVO (PROBLEMÁTICA UX INTACTA) -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <!-- Franja superior naranja de 3px -->
                 <div class="border-t-[3px] border-orange-500 p-6 pb-3">
                   <div class="flex items-center justify-between">
                     <div>
@@ -261,25 +261,19 @@
                       </p>
                     </div>
                     <!-- Título de mes -->
-                    <span class="text-xs font-bold text-gray-900 uppercase tracking-wider px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span id="calendar-month-title" class="text-xs font-bold text-gray-900 uppercase tracking-wider px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg">
                       Noviembre 2026
                     </span>
                   </div>
                 </div>
 
                 <div class="p-6 pt-2">
-                  <!-- AVISO VISUAL DE LA PROBLEMÁTICA (DIAGNÓSTICO EN TIEMPO DE DISEÑO) -->
                   <div class="mb-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-[11px] text-gray-500 flex items-center justify-between">
                     <span>Selector matricial de días del mes:</span>
                     <span id="selected-date-badge" class="font-bold text-gray-900">Ninguna fecha seleccionada</span>
                   </div>
 
-                  <!-- 
-                    PROBLEMA DE USABILIDAD 2: CALENDARIO ANTI-INTUITIVO
-                    Los días disponibles y los días ocupados NO TIENEN DIFERENCIA VISUAL.
-                    Todos usan estrictamente: text-gray-700 bg-white border border-gray-200.
-                    El usuario debe adivinar o hacer clic a ciegas.
-                  -->
+                  <!-- Encabezados de días de la semana -->
                   <div class="grid grid-cols-7 gap-1.5 text-center mb-2">
                     <span class="text-[11px] font-bold text-gray-500 py-1">L</span>
                     <span class="text-[11px] font-bold text-gray-500 py-1">M</span>
@@ -290,21 +284,22 @@
                     <span class="text-[11px] font-bold text-gray-500 py-1">D</span>
                   </div>
 
-                  <div id="calendar-grid" class="grid grid-cols-7 gap-2">
-                    <!-- Días generados dinámicamente o estructurados idénticos en estilo -->
-                    <!-- NOTA: Todos tienen text-gray-700 bg-white border border-gray-200 -->
-                  </div>
+                  <!-- 
+                    ANTIPATRÓN DE USABILIDAD PRESERVADO 100%:
+                    La grilla se genera iterando sobre SpaceConfig.calendarDays, pero
+                    todos los días comparten idénticas clases visuales sin revelar disponibilidad.
+                  -->
+                  <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
                 </div>
               </div>
 
             </div>
 
-            <!-- COLUMNA DERECHA: FRANJAS HORARIAS OCULTAS Y RESUMEN (5 Cols) -->
+            <!-- COLUMNA DERECHA: FRANJAS HORARIAS OCULTAS (OBSERVER SUBSCRIBER) (5 Cols) -->
             <div class="lg:col-span-5 flex flex-col">
 
-              <!-- D. TARJETA DE CONTENIDO 3: HORARIO (CON PROBLEMA DE VISIBILIDAD OCULTA) -->
+              <!-- D. TARJETA DE CONTENIDO 3: HORARIO (CONTROLADO POR EL PATRÓN OBSERVER) -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <!-- Franja superior naranja de 3px -->
                 <div class="border-t-[3px] border-orange-500 p-6 pb-4">
                   <h2 class="text-lg font-extrabold tracking-tight text-gray-900">
                     3. Franja Horaria
@@ -315,11 +310,7 @@
                 </div>
 
                 <div class="p-6 pt-0">
-                  <!-- 
-                    PROBLEMA DE USABILIDAD 3: FRANJAS HORARIAS OCULTAS
-                    Las franjas de hora SOLO aparecen en un <select> oculto que se revela 
-                    después de seleccionar fecha y salón. El usuario no sabe por qué no ve horarios.
-                  -->
+                  <!-- Placeholder que oculta el selector (ANTIPATRÓN PRESERVADO) -->
                   <div id="time-slot-placeholder" class="py-8 px-4 text-center border-2 border-dashed border-gray-200 rounded-lg">
                     <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -330,25 +321,21 @@
                     </p>
                   </div>
 
-                  <!-- CONTENEDOR OCULTO REVELADO DE FORMA ABRUPTA -->
+                  <!-- Contenedor oculto en el DOM revelado por el TimeSlotObserver -->
                   <div id="hidden-time-slots" class="hidden space-y-4">
                     <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700">
                       <span class="font-bold text-gray-900">Horarios detectados para el espacio:</span>
                       <p class="text-[11px] text-gray-500 mt-0.5">Seleccione el bloque de inicio y finalización requerido.</p>
                     </div>
 
+                    <!-- 2. ELIMINACIÓN DE HARD CODING: Franjas dinámicas desde SpaceConfig -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Franja de Reserva
                       </label>
-                      <select id="select-time-slot" onchange="handleSlotChange()" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
+                      <select id="select-time-slot" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione turno...</option>
-                        <option value="07:00 - 09:00">07:00 AM - 09:00 AM (Bloque Mañana 1)</option>
-                        <option value="09:00 - 11:00">09:00 AM - 11:00 AM (Bloque Mañana 2)</option>
-                        <option value="11:00 - 13:00">11:00 AM - 01:00 PM (Bloque Mediodía)</option>
-                        <option value="14:00 - 16:00">02:00 PM - 04:00 PM (Bloque Tarde 1)</option>
-                        <option value="16:00 - 18:00">04:00 PM - 06:00 PM (Bloque Tarde 2)</option>
-                        <option value="18:30 - 21:30">06:30 PM - 09:30 PM (Bloque Nocturno)</option>
+                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
 
@@ -362,9 +349,8 @@
                 </div>
               </div>
 
-              <!-- D. TARJETA DE CONTENIDO 4: CONFIRMACIÓN Y BOTONES CON ESTILO CORPORATIVO ESTRICTO -->
+              <!-- D. TARJETA DE CONTENIDO 4: CONFIRMACIÓN Y BOTONES -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <!-- Franja superior naranja de 3px -->
                 <div class="border-t-[3px] border-orange-500 p-6 pb-4">
                   <h2 class="text-base font-extrabold tracking-tight text-gray-900">
                     Acción de Trámite
@@ -372,8 +358,8 @@
                 </div>
 
                 <div class="p-6 pt-0 space-y-3">
-                  <!-- E. Botón Primario -->
-                  <button id="btn-submit-reservation" onclick="submitReservation()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3 px-4 text-sm flex items-center justify-center gap-2">
+                  <!-- E. Botón Primario: Delegación limpia al ReservationService (SRP) -->
+                  <button id="btn-submit-reservation" onclick="handleReservationSubmitUI()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3 px-4 text-sm flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -381,7 +367,7 @@
                   </button>
 
                   <!-- E. Botón Secundario -->
-                  <button id="btn-reset-reservation" onclick="resetReservationForm()" class="w-full bg-white border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 ease-in-out py-2.5 px-4 text-sm font-semibold text-center">
+                  <button id="btn-reset-reservation" onclick="handleReservationResetUI()" class="w-full bg-white border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 ease-in-out py-2.5 px-4 text-sm font-semibold text-center">
                     Limpiar Campos
                   </button>
                 </div>
@@ -395,13 +381,11 @@
 
 
         <!-- =====================================================================
-             VISTA 2: ACCESO INSTITUCIONAL (LOGIN CON FALLO SILENCIOSO INTENCIONAL)
+             VISTA 2: ACCESO INSTITUCIONAL (LOGIN CON FALLO SILENCIOSO PRESERVADO)
              ===================================================================== -->
         <div id="view-login" class="hidden max-w-md mx-auto pt-8">
 
-          <!-- Encabezado de la Tarjeta de Login -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <!-- Franja superior naranja de 3px -->
             <div class="border-t-[3px] border-orange-500 p-8 pb-4 text-center">
               <div class="w-12 h-12 bg-orange-500 rounded-xl mx-auto flex items-center justify-center shadow-sm mb-4">
                 <span class="text-white font-extrabold text-xl">U</span>
@@ -414,25 +398,21 @@
               </p>
             </div>
 
-            <!-- Formulario con problema de Usabilidad 1 -->
             <div class="p-8 pt-2 space-y-5">
               
-              <!-- Selector de Roles -->
+              <!-- Roles dinámicos desde SpaceConfig -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                   Rol Institucional
                 </label>
                 <select id="login-role-select" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
-                  <option value="Estudiante">Estudiante de Pregrado / Posgrado</option>
-                  <option value="Docente" selected>Docente Titular / Catedrático</option>
-                  <option value="Administrador">Coordinación de Infraestructura</option>
+                  <!-- Opciones pobladas dinámicamente -->
                 </select>
                 <p class="text-[11px] text-gray-500 mt-1">
                   Demostración del error: Seleccione <strong class="text-gray-700">"Estudiante"</strong> para simular el fallo silencioso.
                 </p>
               </div>
 
-              <!-- Correo -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                   Correo Institucional (@ucompensar.edu.co)
@@ -440,7 +420,6 @@
                 <input type="email" id="login-email" value="carlos.mendoza@ucompensar.edu.co" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200" placeholder="usuario@ucompensar.edu.co">
               </div>
 
-              <!-- Contraseña -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                   Contraseña de Red
@@ -448,7 +427,7 @@
                 <input type="password" id="login-password" value="••••••••••••" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
               </div>
 
-              <!-- Botón Primario de Login -->
+              <!-- ANTIPATRÓN PRESERVADO: Spinner 1.8s y parada silenciosa para Estudiantes -->
               <button id="btn-login-submit" onclick="handleLoginAttempt()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3.5 px-4 text-sm flex items-center justify-center gap-2">
                 <span id="login-btn-text">Ingresar al Sistema</span>
                 <span id="login-btn-spinner" class="hidden">
@@ -472,7 +451,7 @@
 
 
         <!-- =====================================================================
-             VISTA 3: MIS SOLICITUDES (TABLA CORPORATIVA CON ESTILO ESTRICTO)
+             VISTA 3: MIS SOLICITUDES (TABLA HISTÓRICA)
              ===================================================================== -->
         <div id="view-my-reservations" class="hidden max-w-5xl mx-auto">
           <div class="mb-6 flex items-center justify-between">
@@ -523,7 +502,6 @@
                     <td class="py-4 px-6">08 Nov 2026 | 18:30 - 21:30</td>
                     <td class="py-4 px-6">Prof. Carlos Mendoza</td>
                     <td class="py-4 px-6">
-                      <!-- En paleta estricta: Rechazada usa borde y texto oscuro, sin rojo -->
                       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-800 text-[11px] font-bold text-gray-800 bg-white">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-800"></span>
                         Rechazada
@@ -541,71 +519,62 @@
 
 
         <!-- =====================================================================
-             VISTA 4: DIAGNÓSTICO UX Y AUDITORÍA DE PROBLEMAS INTENCIONALES
+             VISTA 4: DIAGNÓSTICO ARQUITECTÓNICO & UX
              ===================================================================== -->
         <div id="view-audit" class="hidden max-w-4xl mx-auto">
           <div class="mb-6">
-            <h2 class="text-2xl font-extrabold tracking-tight text-gray-900">Matriz de Diagnóstico UX y Refactorización</h2>
+            <h2 class="text-2xl font-extrabold tracking-tight text-gray-900">Auditoría Arquitectónica y Patrones GoF</h2>
             <p class="text-sm font-normal text-gray-500 mt-1">
-              Registro explícito de las problemáticas de usabilidad programadas de forma intencional en esta fase.
+              Registro del desacoplamiento SOLID y preservación de antipatrones de usabilidad.
             </p>
           </div>
 
           <div class="space-y-6">
-            <!-- Problema 1 -->
+            <!-- SRP y Desacoplamiento -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
                   <div>
-                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Antipatrón 01</span>
-                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">Fallo Silencioso en Autenticación de Estudiantes</h3>
+                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">SOLID: SRP</span>
+                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">ReservationService Desacoplado</h3>
                   </div>
-                  <span class="px-2.5 py-1 rounded-lg border border-gray-800 text-[11px] font-bold text-gray-800">Severidad Crítica</span>
+                  <span class="px-2.5 py-1 rounded-lg border border-orange-500 text-[11px] font-bold text-orange-500">Refactorizado</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-3 leading-relaxed">
-                  <strong>Comportamiento Intencional:</strong> Al seleccionar el rol "Estudiante" en el formulario de login, el botón activa un spinner de carga durante 1.8 segundos y luego regresa a su estado inicial de forma estática. No se despliega mensaje de error, advertencia visual ni redirección.
+                  Toda la lógica de verificación de integridad, consulta de saturación y radicación de solicitudes fue extraída de la UI a <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-800">ReservationService.js</code>. La vista se limita a capturar eventos y delegar.
                 </p>
-                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 border border-gray-200">
-                  <strong>Heurística Violada:</strong> Heurística #1 (Visibilidad del estado del sistema) y Heurística #9 (Ayudar a los usuarios a reconocer, diagnosticar y recuperarse de errores). Genera desconcierto absoluto y clics compulsivos repetidos.
-                </div>
               </div>
             </div>
 
-            <!-- Problema 2 -->
+            <!-- Observer Pattern -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
                   <div>
-                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Antipatrón 02</span>
-                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">Calendario Matricial Sin Jerarquía de Disponibilidad</h3>
+                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Patrón GoF: Observer</span>
+                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">Sujeto y Observadores Desacoplados</h3>
                   </div>
-                  <span class="px-2.5 py-1 rounded-lg border border-gray-800 text-[11px] font-bold text-gray-800">Severidad Alta</span>
+                  <span class="px-2.5 py-1 rounded-lg border border-orange-500 text-[11px] font-bold text-orange-500">Refactorizado</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-3 leading-relaxed">
-                  <strong>Comportamiento Intencional:</strong> Los días habilitados y los días con cupo saturado comparten exactamente las mismas clases Tailwind (<code class="bg-gray-100 px-1 py-0.5 rounded text-gray-800">text-gray-700 bg-white border border-gray-200</code>). No existen indicadores de estado (puntos, badges, o tonos diferenciados).
+                  El calendario no manipula directamente el DOM de franjas horarias. Emite el evento <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-800">DATE_SELECTED</code> a través de <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-800">ReservationSubject</code>. El módulo de horarios actúa como observador suscrito, pero <em>mantiene intacta</em> la regla de ocultamiento hasta cumplir las precondiciones.
                 </p>
-                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 border border-gray-200">
-                  <strong>Heurística Violada:</strong> Heurística #6 (Reconocimiento antes que recuerdo) y Carga Cognitiva. El usuario se ve obligado a interactuar mediante ensayo y error.
-                </div>
               </div>
             </div>
 
-            <!-- Problema 3 -->
+            <!-- SpaceConfig -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
                   <div>
-                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Antipatrón 03</span>
-                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">Franjas Horarias Ocultas y Dependencia No Señalizada</h3>
+                    <span class="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Configuración Dinámica</span>
+                    <h3 class="text-lg font-extrabold tracking-tight text-gray-900 mt-0.5">Eliminación de Hard Coding</h3>
                   </div>
-                  <span class="px-2.5 py-1 rounded-lg border border-gray-800 text-[11px] font-bold text-gray-800">Severidad Media</span>
+                  <span class="px-2.5 py-1 rounded-lg border border-orange-500 text-[11px] font-bold text-orange-500">Refactorizado</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-3 leading-relaxed">
-                  <strong>Comportamiento Intencional:</strong> El selector de turnos permanece totalmente oculto en el árbol del DOM hasta que el usuario activa consecutivamente la selección de fecha y aula. No hay affordance que indique que la sección de horas depende de estas acciones previas.
+                  Los selectores de edificios, salas, franjas y la grilla de días se alimentan iterando sobre <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-800">SpaceConfig.js</code>, garantizando una arquitectura orientada a configuración inmutable.
                 </p>
-                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-700 border border-gray-200">
-                  <strong>Heurística Violada:</strong> Heurística #2 (Correspondencia entre el sistema y el mundo real) y Principio de Anticipación.
-                </div>
               </div>
             </div>
           </div>
@@ -616,51 +585,38 @@
   </div>
 
   <!-- =========================================================================
-       5. EL COMPONENTE FACTORY METHOD (NOTIFICACIONES TOASTS)
-       Contenedor flotante: fixed top-20 right-6 flex flex-col gap-3 z-50
+       5. EL COMPONENTE FACTORY METHOD (NOTIFICACIONES TOASTS - INTACTO)
        ========================================================================= -->
-  <div id="toast-notification-container" class="fixed top-20 right-6 flex flex-col gap-3 z-50 pointer-events-none">
-    <!-- Los elementos hijos son generados dinámicamente mediante NotificationFactory -->
-  </div>
+  <div id="toast-notification-container" class="fixed top-20 right-6 flex flex-col gap-3 z-50 pointer-events-none"></div>
 
 
   <!-- =========================================================================
-       SCRIPTS: LÓGICA FRONTEND, FACTORY METHOD Y PROBLEMAS DE USABILIDAD
+       SCRIPTS: FACTORY METHOD (INTACTO) + CONTROLADOR DE VISTA (OBSERVER SUBSCRIBER)
        ========================================================================= -->
   <script>
     /**
      * =========================================================================
-     * PATRÓN DE DISEÑO GOF: FACTORY METHOD PARA NOTIFICACIONES TOAST
+     * PATRÓN FACTORY METHOD (GoF) - NOTIFICACIONES TOAST (MANTENIDO INTACTO)
      * =========================================================================
-     * Cumplimiento estricto de la paleta:
-     * - Base: bg-white w-80 p-4 rounded-xl shadow-xl border-l-8 flex items-start gap-3 transform transition-all duration-300 relative
-     * - Creada / Aprobada: border-orange-500, texto naranja (text-orange-500)
-     * - Rechazada / Cancelada: border-gray-800, texto oscuro (text-gray-800), SIN USAR ROJO.
      */
-
-    // Producto Abstracto
     class NotificationToast {
       constructor(title, message, options = {}) {
         if (new.target === NotificationToast) {
-          throw new TypeError("No se puede instanciar la clase abstracta NotificationToast directamente.");
+          throw new TypeError("No se puede instanciar NotificationToast directamente.");
         }
         this.title = title;
         this.message = message;
         this.options = options;
       }
-
-      // Método fábrica abstracto
       renderElement() {
-        throw new Error("El método renderElement() debe ser implementado por la subclase concreta.");
+        throw new Error("renderElement() debe ser implementado.");
       }
     }
 
-    // Producto Concreto 1: Notificación Aprobada / Creada
     class ApprovedNotificationToast extends NotificationToast {
       renderElement() {
         const toast = document.createElement('div');
         toast.className = "bg-white w-80 p-4 rounded-xl shadow-xl border-l-8 border-orange-500 flex items-start gap-3 transform transition-all duration-300 relative translate-x-full opacity-0 pointer-events-auto select-none";
-        
         toast.innerHTML = `
           <div class="text-orange-500 mt-0.5 flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -677,18 +633,15 @@
             </svg>
           </button>
         `;
-
         toast.querySelector('button').addEventListener('click', () => NotificationFactory.dismiss(toast));
         return toast;
       }
     }
 
-    // Producto Concreto 2: Notificación Rechazada / Cancelada (Reemplazo estricto del rojo por gris oscuro #1F2937)
     class RejectedNotificationToast extends NotificationToast {
       renderElement() {
         const toast = document.createElement('div');
         toast.className = "bg-white w-80 p-4 rounded-xl shadow-xl border-l-8 border-gray-800 flex items-start gap-3 transform transition-all duration-300 relative translate-x-full opacity-0 pointer-events-auto select-none";
-        
         toast.innerHTML = `
           <div class="text-gray-800 mt-0.5 flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -705,57 +658,36 @@
             </svg>
           </button>
         `;
-
         toast.querySelector('button').addEventListener('click', () => NotificationFactory.dismiss(toast));
         return toast;
       }
     }
 
-    // Fábrica (Creator)
     class NotificationFactory {
       static createToast(type, title, message, options = {}) {
         let toastInstance;
         const normalizedType = String(type).trim().toLowerCase();
-
-        switch (normalizedType) {
-          case 'approved':
-          case 'creada':
-          case 'aprobada':
-            toastInstance = new ApprovedNotificationToast(title, message, options);
-            break;
-
-          case 'rejected':
-          case 'rechazada':
-          case 'cancelada':
-            toastInstance = new RejectedNotificationToast(title, message, options);
-            break;
-
-          default:
-            console.warn(`Tipo de notificación '${type}' desconocido. Usando 'approved' por defecto.`);
-            toastInstance = new ApprovedNotificationToast(title, message, options);
+        if (normalizedType === 'approved' || normalizedType === 'creada' || normalizedType === 'aprobada') {
+          toastInstance = new ApprovedNotificationToast(title, message, options);
+        } else {
+          toastInstance = new RejectedNotificationToast(title, message, options);
         }
-
         return toastInstance.renderElement();
       }
 
       static show(type, title, message, duration = 4500) {
         const container = document.getElementById('toast-notification-container');
         if (!container) return;
-
         const toastElement = this.createToast(type, title, message);
         container.appendChild(toastElement);
 
-        // Disparo de animación fluida de entrada
         requestAnimationFrame(() => {
           toastElement.classList.remove('translate-x-full', 'opacity-0');
           toastElement.classList.add('translate-x-0', 'opacity-100');
         });
 
-        // Temporizador de remoción automática
         if (duration > 0) {
-          setTimeout(() => {
-            this.dismiss(toastElement);
-          }, duration);
+          setTimeout(() => this.dismiss(toastElement), duration);
         }
       }
 
@@ -764,14 +696,11 @@
         toastElement.classList.remove('translate-x-0', 'opacity-100');
         toastElement.classList.add('translate-x-full', 'opacity-0');
         setTimeout(() => {
-          if (toastElement.parentElement) {
-            toastElement.remove();
-          }
+          if (toastElement.parentElement) toastElement.remove();
         }, 320);
       }
     }
 
-    // Funciones utilitarias para disparar las notificaciones desde botones
     function triggerApprovedToast(title = "Solicitud Aprobada", msg = "El Laboratorio de Redes 301 ha sido confirmado para el 14 de Noviembre.") {
       NotificationFactory.show('aprobada', title, msg);
     }
@@ -780,278 +709,204 @@
       NotificationFactory.show('rechazada', title, msg);
     }
 
-
     /**
      * =========================================================================
-     * ESTADO GLOBAL Y LÓGICA DE NAVEGACIÓN
+     * 3. OBSERVADOR DE FRANJAS HORARIAS (SUBSCRIBER DEL PATRÓN OBSERVER)
      * =========================================================================
+     * Escucha eventos DATE_SELECTED y ROOM_SELECTED del ReservationSubject.
+     * MANTIENE INTACTO el antipatrón de ocultamiento hasta tener ambos parámetros.
      */
-    let selectedDate = null;
-    let selectedRoom = null;
-    let currentUser = {
-      name: "Prof. Carlos Mendoza",
-      role: "Docente de Ingeniería",
-      initials: "CM",
-      authenticated: true
-    };
+    class TimeSlotModuleObserver {
+      constructor(placeholderId, containerId) {
+        this.placeholder = document.getElementById(placeholderId);
+        this.container = document.getElementById(containerId);
+        this.currentRoom = null;
+        this.currentDate = null;
+      }
 
-    function switchView(viewName) {
-      const views = ['reservation', 'login', 'my-reservations', 'audit'];
-      views.forEach(v => {
-        const el = document.getElementById(`view-${v}`);
-        if (el) el.classList.add('hidden');
-      });
+      onDateSelected(date) {
+        this.currentDate = date;
+        this.evaluateVisibility();
+      }
 
-      const targetView = document.getElementById(`view-${viewName}`);
-      if (targetView) targetView.classList.remove('hidden');
+      onRoomSelected(roomId) {
+        this.currentRoom = roomId;
+        this.evaluateVisibility();
+      }
 
-      // Actualizar estado de estilos en Sidebar
-      const buttons = [
-        { id: 'nav-btn-reservation', view: 'reservation' },
-        { id: 'nav-btn-login', view: 'login' },
-        { id: 'nav-btn-list', view: 'my-reservations' },
-        { id: 'nav-btn-audit', view: 'audit' }
-      ];
+      onFormReset() {
+        this.currentRoom = null;
+        this.currentDate = null;
+        this.evaluateVisibility();
+      }
 
-      buttons.forEach(b => {
-        const btnEl = document.getElementById(b.id);
-        if (btnEl) {
-          if (b.view === viewName) {
-            btnEl.className = "w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out bg-orange-600 border-l-4 border-white shadow-sm";
-          } else {
-            btnEl.className = "w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-orange-600 hover:border-l-4 hover:border-white";
-          }
+      evaluateVisibility() {
+        // ANTIPATRÓN DE USABILIDAD 3 PRESERVADO:
+        // Solo se revela si ambos están presentes; de lo contrario permanece oculto
+        if (this.currentRoom && this.currentDate) {
+          this.placeholder.classList.add('hidden');
+          this.container.classList.remove('hidden');
+        } else {
+          this.placeholder.classList.remove('hidden');
+          this.container.classList.add('hidden');
         }
-      });
-    }
-
-
-    /**
-     * =========================================================================
-     * PROBLEMA DE USABILIDAD 1: LOGIN FALLIDO SILENCIOSO (ESTUDIANTES)
-     * =========================================================================
-     * Si el rol es "Estudiante", el botón activa un spinner durante 1.8 segundos
-     * y luego vuelve a su estado normal SIN MOSTRAR NINGÚN MENSAJE DE ERROR NI ALERTA.
-     * Si el rol es "Docente", sí permite ingresar exitosamente.
-     */
-    function handleLoginAttempt() {
-      const roleSelect = document.getElementById('login-role-select');
-      const selectedRole = roleSelect.value;
-      const btn = document.getElementById('btn-login-submit');
-      const btnText = document.getElementById('login-btn-text');
-      const btnSpinner = document.getElementById('login-btn-spinner');
-
-      // Estado de Carga
-      btn.disabled = true;
-      btnText.textContent = "Verificando Credenciales...";
-      btnSpinner.classList.remove('hidden');
-
-      if (selectedRole === 'Estudiante') {
-        // FALLO SILENCIOSO INTENCIONAL
-        setTimeout(() => {
-          // El botón se detiene y vuelve a su estado inicial.
-          // CERO retroalimentación para el estudiante.
-          btn.disabled = false;
-          btnText.textContent = "Ingresar al Sistema";
-          btnSpinner.classList.add('hidden');
-          // NO HAY MENSAJE, NO HAY ERROR, NO HAY TOAST (Problema de Usabilidad)
-        }, 1800);
-      } else {
-        // ACCESO AUTORIZADO (Docente o Administrador)
-        setTimeout(() => {
-          btn.disabled = false;
-          btnText.textContent = "Ingresar al Sistema";
-          btnSpinner.classList.add('hidden');
-
-          currentUser = {
-            name: selectedRole === 'Docente' ? "Prof. Carlos Mendoza" : "Ing. Laura Pardo (Admin)",
-            role: selectedRole === 'Docente' ? "Docente de Ingeniería" : "Coordinación Infraestructura",
-            initials: selectedRole === 'Docente' ? "CM" : "LP",
-            authenticated: true
-          };
-
-          // Actualizar Navbar
-          document.getElementById('user-display-name').textContent = currentUser.name;
-          document.getElementById('user-display-role').textContent = currentUser.role;
-          document.getElementById('user-display-initials').textContent = currentUser.initials;
-
-          // Mostrar Notificación Aprobada de Bienvenida
-          NotificationFactory.show(
-            'aprobada',
-            'Sesión Autorizada',
-            `Bienvenido al sistema institucional, ${currentUser.name}.`
-          );
-
-          switchView('reservation');
-        }, 1200);
       }
     }
 
+    // Instancia del observador conectada al bus de eventos de ReservationService
+    let timeSlotObserverInstance = null;
 
     /**
      * =========================================================================
-     * PROBLEMA DE USABILIDAD 2: CALENDARIO ANTI-INTUITIVO
+     * 2. RENDERIZADO DINÁMICO DE SELECTORES DESDE SPACECONFIG (NO HARD CODING)
      * =========================================================================
-     * Generación de días donde los días libres y los ocupados son IDÉNTICOS en diseño.
-     * Todos se renderizan con: "text-gray-700 bg-white border border-gray-200"
-     * Ningún usuario puede discernir visualmente la disponibilidad sin prueba y error.
      */
-    // Estado interno del calendario (oculto a la vista del usuario intencionalmente)
-    const calendarDaysData = [
-      { day: 1, available: false }, { day: 2, available: true }, { day: 3, available: false },
-      { day: 4, available: false }, { day: 5, available: true }, { day: 6, available: true },
-      { day: 7, available: false }, { day: 8, available: false }, { day: 9, available: false },
-      { day: 10, available: true }, { day: 11, available: true }, { day: 12, available: false },
-      { day: 13, available: true }, { day: 14, available: true }, { day: 15, available: false },
-      { day: 16, available: false }, { day: 17, available: true }, { day: 18, available: true },
-      { day: 19, available: false }, { day: 20, available: true }, { day: 21, available: true },
-      { day: 22, available: false }, { day: 23, available: false }, { day: 24, available: true },
-      { day: 25, available: true }, { day: 26, available: false }, { day: 27, available: true },
-      { day: 28, available: true }, { day: 29, available: false }, { day: 30, available: true }
-    ];
+    function renderDynamicSelectorsFromConfig() {
+      // 1. Selector de Edificios
+      const buildingSelect = document.getElementById('select-building');
+      buildingSelect.innerHTML = '<option value="">Seleccione Edificio...</option>';
+      SpaceConfig.buildings.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.name;
+        buildingSelect.appendChild(opt);
+      });
 
-    function renderAntiIntuitiveCalendar() {
+      // 2. Selector de Salones
+      const roomSelect = document.getElementById('select-room');
+      roomSelect.innerHTML = '<option value="">Seleccione Salón...</option>';
+      SpaceConfig.rooms.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.name;
+        roomSelect.appendChild(opt);
+      });
+
+      // 3. Selector de Franjas Horarias
+      const slotSelect = document.getElementById('select-time-slot');
+      slotSelect.innerHTML = '<option value="">Seleccione turno...</option>';
+      SpaceConfig.timeSlots.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.label;
+        slotSelect.appendChild(opt);
+      });
+
+      // 4. Selector de Roles de Login
+      const roleSelect = document.getElementById('login-role-select');
+      if (roleSelect) {
+        roleSelect.innerHTML = '';
+        SpaceConfig.roles.forEach(role => {
+          const opt = document.createElement('option');
+          opt.value = role.id;
+          opt.textContent = role.label;
+          if (role.id === 'Docente') opt.selected = true;
+          roleSelect.appendChild(opt);
+        });
+      }
+
+      // Metadatos
+      if (SpaceConfig.metadata) {
+        const periodEl = document.getElementById('header-period');
+        const campusEl = document.getElementById('header-campus');
+        const monthEl = document.getElementById('calendar-month-title');
+        if (periodEl) periodEl.textContent = SpaceConfig.metadata.academicPeriod;
+        if (campusEl) campusEl.textContent = SpaceConfig.metadata.campusName;
+        if (monthEl) monthEl.textContent = SpaceConfig.metadata.monthName;
+      }
+    }
+
+    /**
+     * =========================================================================
+     * RENDERIZADO DEL CALENDARIO DESDE SPACECONFIG (ANTIPATRÓN 2 PRESERVADO)
+     * =========================================================================
+     */
+    let uiSelectedDate = null;
+    let uiSelectedRoom = null;
+
+    function renderCalendarFromConfig() {
       const container = document.getElementById('calendar-grid');
       container.innerHTML = '';
 
-      calendarDaysData.forEach(item => {
+      SpaceConfig.calendarDays.forEach(item => {
         const dayBtn = document.createElement('button');
         dayBtn.type = 'button';
-        // TODOS comparten exactamente el mismo estilo sin pistas de ocupación
+        // Clases idénticas para disponibles y ocupados (ANTIPATRÓN 2 PRESERVADO)
         dayBtn.className = "calendar-day-btn py-3 px-2 text-center text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-orange-500 transition-all duration-200 ease-in-out focus:outline-none";
         dayBtn.textContent = item.day;
         dayBtn.dataset.day = item.day;
-        dayBtn.dataset.available = item.available;
 
-        dayBtn.addEventListener('click', () => selectCalendarDay(item, dayBtn));
+        dayBtn.addEventListener('click', () => {
+          uiSelectedDate = `2026-11-${String(item.day).padStart(2, '0')}`;
+          
+          document.querySelectorAll('.calendar-day-btn').forEach(b => {
+            b.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-500');
+            b.classList.add('text-gray-700', 'bg-white', 'border-gray-200');
+          });
+
+          dayBtn.classList.remove('text-gray-700', 'bg-white', 'border-gray-200');
+          dayBtn.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-500');
+
+          document.getElementById('selected-date-badge').textContent = `Noviembre ${item.day}, 2026`;
+
+          // 3. PATRÓN OBSERVER: Emitir evento DATE_SELECTED a través del Subject
+          reservationService.selectDate(uiSelectedDate);
+        });
+
         container.appendChild(dayBtn);
       });
     }
 
-    function selectCalendarDay(item, clickedButton) {
-      selectedDate = `2026-11-${String(item.day).padStart(2, '0')}`;
-
-      // Actualizar estilo de selección
-      document.querySelectorAll('.calendar-day-btn').forEach(btn => {
-        btn.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-500');
-        btn.classList.add('text-gray-700', 'bg-white', 'border-gray-200');
-      });
-
-      clickedButton.classList.remove('text-gray-700', 'bg-white', 'border-gray-200');
-      clickedButton.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-500');
-
-      document.getElementById('selected-date-badge').textContent = `Noviembre ${item.day}, 2026`;
-
-      // Evaluar desbloqueo de franjas horarias ocultas
-      checkAndRevealTimeSlots();
+    function handleBuildingSelect(buildingId) {
+      reservationService.selectBuilding(buildingId);
     }
 
+    function handleRoomSelect(roomId) {
+      uiSelectedRoom = roomId;
+      // 3. PATRÓN OBSERVER: Emitir evento ROOM_SELECTED a través del Subject
+      reservationService.selectRoom(roomId);
+    }
 
     /**
      * =========================================================================
-     * PROBLEMA DE USABILIDAD 3: FRANJAS HORARIAS OCULTAS
+     * 1. DELEGACIÓN SRP: CONTROLADOR DE VISTA DE RESERVA
      * =========================================================================
-     * El selector de franjas horarias permanece oculto hasta que el usuario 
-     * ha seleccionado tanto un salón como una fecha en el calendario.
+     * La UI únicamente extrae valores del DOM y delega la validación completa
+     * y procesamiento de negocio a ReservationService.
      */
-    function handleBuildingChange() {
-      // Cambio de edificio
-    }
+    function handleReservationSubmitUI() {
+      const slotVal = document.getElementById('select-time-slot').value;
+      const reasonVal = document.getElementById('reservation-reason').value;
 
-    function handleRoomChange() {
-      const roomSelect = document.getElementById('select-room');
-      selectedRoom = roomSelect.value;
-      checkAndRevealTimeSlots();
-    }
+      const payload = {
+        roomId: uiSelectedRoom,
+        date: uiSelectedDate,
+        slot: slotVal,
+        reason: reasonVal,
+        requesterName: currentUser.name
+      };
 
-    function handleSlotChange() {
-      // Cambio de franja horaria
-    }
+      // Delegación de Responsabilidad (SRP)
+      const result = reservationService.processReservation(payload);
 
-    function checkAndRevealTimeSlots() {
-      const placeholder = document.getElementById('time-slot-placeholder');
-      const hiddenSlots = document.getElementById('hidden-time-slots');
+      if (result.success) {
+        // Notificación de aprobación mediante Factory Method
+        NotificationFactory.show('aprobada', result.title, result.message);
 
-      if (selectedRoom && selectedDate) {
-        // Revelación abrupta del selector oculto
-        placeholder.classList.add('hidden');
-        hiddenSlots.classList.remove('hidden');
+        // Actualizar tabla histórica en UI
+        addReservationToUITable(result.reservation);
+
+        // Limpiar formulario UI
+        handleReservationResetUI();
       } else {
-        placeholder.classList.remove('hidden');
-        hiddenSlots.classList.add('hidden');
+        // Notificación de rechazo mediante Factory Method (usando border-gray-800 sin rojo)
+        NotificationFactory.show('rechazada', result.title, result.message);
       }
     }
 
-
-    /**
-     * =========================================================================
-     * ACCIÓN DE ENVIAR RESERVA
-     * =========================================================================
-     */
-    function submitReservation() {
-      const slotSelect = document.getElementById('select-time-slot');
-      const slotVal = slotSelect ? slotSelect.value : '';
-
-      if (!selectedRoom || !selectedDate || !slotVal) {
-        // En caso de faltar campos
-        NotificationFactory.show(
-          'rechazada',
-          'Campos Incompletos',
-          'Debe seleccionar un salón, fecha en el calendario y franja horaria para radicar la reserva.'
-        );
-        return;
-      }
-
-      // Comprobar si el día elegido en el calendario anti-intuitivo estaba saturado
-      const dayNum = parseInt(selectedDate.split('-')[2], 10);
-      const dayInfo = calendarDaysData.find(d => d.day === dayNum);
-
-      if (dayInfo && !dayInfo.available) {
-        // El usuario descubrió hasta el envío que el día estaba ocupado (Consecuencia del antipatrón)
-        NotificationFactory.show(
-          'rechazada',
-          'Espacio No Disponible',
-          `El ${selectedRoom} ya se encuentra reservado para el día ${selectedDate} en esa franja. Seleccione otra fecha.`
-        );
-      } else {
-        // Reserva Aprobada exitosamente
-        NotificationFactory.show(
-          'aprobada',
-          'Reserva Registrada',
-          `Solicitud radicada con éxito para ${selectedRoom} el ${selectedDate} (${slotVal}). Código: #RES-2026-${Math.floor(100 + Math.random() * 900)}`
-        );
-
-        // Añadir a la tabla de mis solicitudes
-        const tableBody = document.getElementById('reservations-table-body');
-        if (tableBody) {
-          const newRow = document.createElement('tr');
-          newRow.className = "hover:bg-gray-50 transition-all duration-200";
-          newRow.innerHTML = `
-            <td class="py-4 px-6 font-bold text-gray-900">#RES-2026-${Math.floor(100 + Math.random() * 900)}</td>
-            <td class="py-4 px-6">${selectedRoom}</td>
-            <td class="py-4 px-6">${selectedDate} | ${slotVal}</td>
-            <td class="py-4 px-6">${currentUser.name}</td>
-            <td class="py-4 px-6">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-orange-500 text-[11px] font-bold text-orange-500 bg-white">
-                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                Aprobada
-              </span>
-            </td>
-            <td class="py-4 px-6 text-right">
-              <button onclick="triggerApprovedToast('Acreditación Existente', 'La reserva se encuentra en trámite activo.')" class="text-orange-500 hover:text-orange-600 font-bold">Ver Voucher</button>
-            </td>
-          `;
-          tableBody.prepend(newRow);
-        }
-
-        // Limpiar formulario
-        resetReservationForm();
-      }
-    }
-
-    function resetReservationForm() {
-      selectedDate = null;
-      selectedRoom = null;
+    function handleReservationResetUI() {
+      uiSelectedDate = null;
+      uiSelectedRoom = null;
       document.getElementById('select-building').value = '';
       document.getElementById('select-room').value = '';
       document.getElementById('select-time-slot').value = '';
@@ -1063,12 +918,149 @@
         btn.classList.add('text-gray-700', 'bg-white', 'border-gray-200');
       });
 
-      checkAndRevealTimeSlots();
+      // 3. Notificar reset al Subject para que el TimeSlotModuleObserver oculte la sección
+      reservationService.resetForm();
     }
 
-    // Inicialización al cargar el documento
+    function addReservationToUITable(res) {
+      const tableBody = document.getElementById('reservations-table-body');
+      if (!tableBody || !res) return;
+
+      const newRow = document.createElement('tr');
+      newRow.className = "hover:bg-gray-50 transition-all duration-200";
+      newRow.innerHTML = `
+        <td class="py-4 px-6 font-bold text-gray-900">${res.code}</td>
+        <td class="py-4 px-6">${res.roomName}</td>
+        <td class="py-4 px-6">${res.date} | ${res.slot}</td>
+        <td class="py-4 px-6">${res.requester}</td>
+        <td class="py-4 px-6">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-orange-500 text-[11px] font-bold text-orange-500 bg-white">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+            ${res.status}
+          </span>
+        </td>
+        <td class="py-4 px-6 text-right">
+          <button onclick="triggerApprovedToast('Acreditación Existente', 'La reserva ${res.code} ya se encuentra confirmada.')" class="text-orange-500 hover:text-orange-600 font-bold">Ver Voucher</button>
+        </td>
+      `;
+      tableBody.prepend(newRow);
+    }
+
+    /**
+     * =========================================================================
+     * ANTIPATRÓN 1 PRESERVADO: LOGIN FALLIDO SILENCIOSO (ESTUDIANTES)
+     * =========================================================================
+     */
+    let currentUser = {
+      name: "Prof. Carlos Mendoza",
+      role: "Docente de Ingeniería",
+      initials: "CM"
+    };
+
+    function handleLoginAttempt() {
+      const role = document.getElementById('login-role-select').value;
+      const btn = document.getElementById('btn-login-submit');
+      const btnText = document.getElementById('login-btn-text');
+      const btnSpinner = document.getElementById('login-btn-spinner');
+
+      btn.disabled = true;
+      btnText.textContent = "Verificando Credenciales...";
+      btnSpinner.classList.remove('hidden');
+
+      if (role === 'Estudiante') {
+        // FALLO SILENCIOSO INTENCIONAL (PRESERVADO INTACTO)
+        setTimeout(() => {
+          btn.disabled = false;
+          btnText.textContent = "Ingresar al Sistema";
+          btnSpinner.classList.add('hidden');
+          // Sin toast, sin mensaje, sin redirección
+        }, 1800);
+      } else {
+        // Docente / Administrador
+        setTimeout(() => {
+          btn.disabled = false;
+          btnText.textContent = "Ingresar al Sistema";
+          btnSpinner.classList.add('hidden');
+
+          currentUser = {
+            name: role === 'Docente' ? "Prof. Carlos Mendoza" : "Ing. Laura Pardo (Admin)",
+            role: role === 'Docente' ? "Docente de Ingeniería" : "Coordinación Infraestructura",
+            initials: role === 'Docente' ? "CM" : "LP"
+          };
+
+          document.getElementById('user-display-name').textContent = currentUser.name;
+          document.getElementById('user-display-role').textContent = currentUser.role;
+          document.getElementById('user-display-initials').textContent = currentUser.initials;
+
+          NotificationFactory.show(
+            'aprobada',
+            'Sesión Autorizada',
+            `Bienvenido al sistema institucional, ${currentUser.name}.`
+          );
+
+          switchView('reservation');
+        }, 1200);
+      }
+    }
+
+    /**
+     * =========================================================================
+     * NAVEGACIÓN ENTRE VISTAS
+     * =========================================================================
+     */
+    function switchView(viewName) {
+      ['reservation', 'login', 'my-reservations', 'audit'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) target.classList.remove('hidden');
+
+      const buttons = [
+        { id: 'nav-btn-reservation', view: 'reservation' },
+        { id: 'nav-btn-login', view: 'login' },
+        { id: 'nav-btn-list', view: 'my-reservations' },
+        { id: 'nav-btn-audit', view: 'audit' }
+      ];
+
+      buttons.forEach(b => {
+        const btn = document.getElementById(b.id);
+        if (btn) {
+          if (b.view === viewName) {
+            btn.className = "w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out bg-orange-600 border-l-4 border-white shadow-sm";
+          } else {
+            btn.className = "w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-orange-600 hover:border-l-4 hover:border-white";
+          }
+        }
+      });
+    }
+
+    /**
+     * =========================================================================
+     * INICIALIZACIÓN DEL SISTEMA Y VINCULACIÓN DEL PATRÓN OBSERVER
+     * =========================================================================
+     */
     document.addEventListener('DOMContentLoaded', () => {
-      renderAntiIntuitiveCalendar();
+      // 1. Renderizar dinámicamente desde SpaceConfig
+      renderDynamicSelectorsFromConfig();
+      renderCalendarFromConfig();
+
+      // 2. Conectar el observador de franjas horarias al Subject de eventos
+      timeSlotObserverInstance = new TimeSlotModuleObserver(
+        'time-slot-placeholder',
+        'hidden-time-slots'
+      );
+
+      const eventBus = reservationService.getEventBus();
+      eventBus.subscribe(ReservationEvents.DATE_SELECTED, date => {
+        timeSlotObserverInstance.onDateSelected(date);
+      });
+      eventBus.subscribe(ReservationEvents.ROOM_SELECTED, roomId => {
+        timeSlotObserverInstance.onRoomSelected(roomId);
+      });
+      eventBus.subscribe(ReservationEvents.FORM_RESET, () => {
+        timeSlotObserverInstance.onFormReset();
+      });
     });
   </script>
 </body>
