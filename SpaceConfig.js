@@ -3,11 +3,45 @@
  * SPACECONFIG: CONFIGURACIÓN CENTRALIZADA DE ESPACIOS ACADÉMICOS
  * =========================================================================
  * Arquitectura: Eliminación del antipatrón "Hard Coding".
- * Centraliza la definición de edificios, salas, franjas horarias y días de calendario.
- * Provee datos inmutables para el renderizado dinámico en la interfaz de usuario.
+ * Centraliza la definición de edificios, salas, franjas horarias,
+ * credenciales demo institucionales y parámetros de configuración.
  */
 
 const SpaceConfig = Object.freeze({
+  // Credenciales Institucionales de Demostración
+  demoCredentials: Object.freeze([
+    {
+      role: 'Docente',
+      roleLabel: 'Docente Titular / Catedrático',
+      email: 'carlos.mendoza@ucompensar.edu.co',
+      password: 'password123',
+      name: 'Prof. Carlos Mendoza',
+      department: 'Docente de Ingeniería',
+      initials: 'CM',
+      behavior: 'Acceso Autorizado al Sistema de Reservas.'
+    },
+    {
+      role: 'Estudiante',
+      roleLabel: 'Estudiante de Pregrado / Posgrado',
+      email: 'estudiante.demo@ucompensar.edu.co',
+      password: 'password123',
+      name: 'Estudiante Demo',
+      department: 'Ingeniería de Sistemas',
+      initials: 'ED',
+      behavior: 'Fallo Silencioso Intencional: El botón carga por 1.8s y se detiene sin mensaje ni acceso.'
+    },
+    {
+      role: 'Administrador',
+      roleLabel: 'Coordinación de Infraestructura',
+      email: 'laura.pardo@ucompensar.edu.co',
+      password: 'admin2026',
+      name: 'Ing. Laura Pardo',
+      department: 'Coordinación de Infraestructura',
+      initials: 'LP',
+      behavior: 'Acceso Autorizado con privilegios de gestión.'
+    }
+  ]),
+
   // Edificios institucionales
   buildings: Object.freeze([
     { id: 'A', name: 'Edificio A - Ingenierías y TI', code: 'ED-A' },
@@ -58,8 +92,7 @@ const SpaceConfig = Object.freeze({
   ]),
 
   // Días de ocupación (Disponibilidad interna para el mes activo)
-  // NOTA ARQUITECTÓNICA: Aunque este dataset define la disponibilidad real,
-  // la capa de presentación mantendrá intencionalmente el antipatrón de usabilidad (calendario ciego).
+  // NOTA ARQUITECTÓNICA: Antipatrón de usabilidad preservado (calendario ciego).
   calendarDays: Object.freeze([
     { day: 1, available: false }, { day: 2, available: true }, { day: 3, available: false },
     { day: 4, available: false }, { day: 5, available: true }, { day: 6, available: true },
@@ -75,22 +108,20 @@ const SpaceConfig = Object.freeze({
 
   // Roles institucionales para autenticación
   roles: Object.freeze([
-    { id: 'Estudiante', label: 'Estudiante de Pregrado / Posgrado' },
     { id: 'Docente', label: 'Docente Titular / Catedrático' },
+    { id: 'Estudiante', label: 'Estudiante de Pregrado / Posgrado' },
     { id: 'Administrador', label: 'Coordinación de Infraestructura' }
   ]),
 
   // Metadatos de periodo institucional
-  metadata: Object.freeze({
-    academicPeriod: '2026-I',
-    campusName: 'Calle 42',
-    monthName: 'Noviembre 2026',
-    year: 2026,
-    monthIndex: 11
-  })
+  metadata: Object.freeze([
+    { key: 'academicPeriod', value: '2026-I' },
+    { key: 'campusName', value: 'Calle 42' },
+    { key: 'monthName', value: 'Noviembre 2026' }
+  ]).reduce((acc, item) => ({ ...acc, [item.key]: item.value }), {})
 });
 
-// Compatibilidad con CommonJS, ES Modules y entorno de Browser Global
+// Compatibilidad con CommonJS, ES Modules y Browser Global
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = SpaceConfig;
 }

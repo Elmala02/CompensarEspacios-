@@ -38,7 +38,6 @@
     body {
       font-family: 'Inter', sans-serif;
     }
-    /* Scrollbar minimalista y corporativo */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -55,21 +54,98 @@
     }
   </style>
 
-  <!-- MÓDULOS DE ARQUITECTURA DESACOPLADA (SOLID: SRP & CONFIGURACIÓN EXTERNA) -->
+  <!-- MÓDULOS DE ARQUITECTURA SOLID (SRP, CONFIGURACIÓN Y OBSERVER) -->
   <script src="SpaceConfig.js"></script>
   <script src="ReservationService.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased">
+<body class="bg-gray-50 text-gray-900 antialiased overflow-hidden">
 
   <!-- =========================================================================
-       CONTENEDOR GLOBAL: Layout de pantalla completa
-       h-screen w-full flex flex-col overflow-hidden
+       1. PANTALLA DE LOGIN OBLIGATORIO DE PANTALLA COMPLETA (GATEKEEPER)
+       Bloquea todo el acceso al sistema hasta que el usuario se autentique.
        ========================================================================= -->
-  <div class="h-screen w-full flex flex-col overflow-hidden">
+  <div id="mandatory-login-screen" class="fixed inset-0 z-50 bg-gray-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden my-auto">
+      
+      <!-- Franja superior naranja de 3px -->
+      <div class="border-t-[3px] border-orange-500 p-8 pb-4 text-center">
+        <!-- Logo UCompensar -->
+        <div class="w-14 h-14 bg-orange-500 rounded-xl mx-auto flex items-center justify-center shadow-md mb-4">
+          <span class="text-white font-extrabold text-2xl tracking-tight">U</span>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">
+          UCompensar <span class="text-orange-500 font-bold">Espacios</span>
+        </h1>
+        <p class="text-xs font-normal text-gray-500 mt-1">
+          Acceso Institucional Obligatorio - Sistema de Asignación de Recursos
+        </p>
+      </div>
+
+      <div class="p-8 pt-2 space-y-5">
+        
+        <!-- SELECTOR DE ROL INSTITUCIONAL -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+            Rol Institucional
+          </label>
+          <select id="login-role-select" onchange="syncCredentialsByRole(this.value)" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
+            <!-- Inyectado dinámicamente desde SpaceConfig.roles -->
+          </select>
+        </div>
+
+        <!-- CORREO INSTITUCIONAL -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+            Correo Institucional (@ucompensar.edu.co)
+          </label>
+          <input type="email" id="login-email" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200" placeholder="usuario@ucompensar.edu.co">
+        </div>
+
+        <!-- CONTRASEÑA -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+            Contraseña de Red
+          </label>
+          <input type="password" id="login-password" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200" placeholder="••••••••••••">
+        </div>
+
+        <!-- BOTÓN DE INGRESO (CON ANTIPATRÓN 1 PRESERVADO) -->
+        <button id="btn-login-submit" onclick="handleLoginAttempt()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3.5 px-4 text-sm flex items-center justify-center gap-2">
+          <span id="login-btn-text">Iniciar Sesión</span>
+          <span id="login-btn-spinner" class="hidden">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+        </button>
+
+        <!-- CAJA DE CREDENCIALES RÁPIDAS PARA FACILITAR PRUEBAS -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2">
+            Credenciales de Demostración (Click para auto-completar):
+          </p>
+          <div class="grid grid-cols-3 gap-2" id="demo-credentials-shortcuts">
+            <!-- Botones dinámicos inyectados desde SpaceConfig.demoCredentials -->
+          </div>
+          <p id="role-feedback-note" class="text-[11px] text-gray-500 mt-2 italic leading-relaxed">
+            Selecciona una credencial para probar el comportamiento.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       2. APLICACIÓN PRINCIPAL (DESBLOQUEADA TRAS INICIAR SESIÓN)
+       ========================================================================= -->
+  <div id="main-application-container" class="h-screen w-full flex flex-col overflow-hidden">
 
     <!-- =========================================================================
          A. BARRA SUPERIOR (NAVBAR)
-         Altura fija h-16, fondo blanco puro, borde inferior grueso border-b-4 border-orange-500
+         h-16, bg-white, border-b-4 border-orange-500
          ========================================================================= -->
     <header class="h-16 w-full bg-white border-b-4 border-orange-500 flex items-center justify-between px-8 z-30 flex-shrink-0">
       <!-- Logo institucional UCompensar -->
@@ -87,15 +163,15 @@
         </div>
       </div>
 
-      <!-- Métricas / Indicador de Estado y Perfil de Usuario -->
+      <!-- Métricas / Indicador de Estado y Perfil de Usuario con Botón Cerrar Sesión -->
       <div class="flex items-center gap-6">
         <div class="hidden md:flex items-center gap-2 text-xs text-gray-500">
           <span class="w-2 h-2 rounded-full bg-orange-500"></span>
           <span>Periodo Académico Activo: <strong id="header-period" class="text-gray-900">2026-I</strong></span>
         </div>
 
-        <!-- Avatar de Usuario -->
-        <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
+        <!-- Avatar de Usuario y Cerrar Sesión -->
+        <div class="flex items-center gap-4 pl-6 border-l border-gray-100">
           <div class="text-right hidden sm:block">
             <p id="user-display-name" class="text-xs font-semibold text-gray-900 leading-tight">Prof. Carlos Mendoza</p>
             <p id="user-display-role" class="text-[11px] text-gray-500 font-normal">Docente de Ingeniería</p>
@@ -103,6 +179,14 @@
           <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-500 flex items-center justify-center text-orange-500 font-bold text-sm shadow-sm transition-all duration-200 ease-in-out hover:shadow-md cursor-pointer">
             <span id="user-display-initials">CM</span>
           </div>
+
+          <!-- Botón de Cerrar Sesión para regresar al login de pantalla completa -->
+          <button onclick="handleLogout()" title="Cerrar Sesión" class="text-xs text-gray-500 hover:text-orange-500 border border-gray-200 hover:border-orange-500 py-1.5 px-3 rounded-lg transition-all duration-200 ease-in-out bg-white shadow-sm flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="hidden md:inline">Salir</span>
+          </button>
         </div>
       </div>
     </header>
@@ -114,8 +198,9 @@
 
       <!-- =========================================================================
            B. MENÚ LATERAL (SIDEBAR)
-           Ancho fijo w-64, fondo naranja vibrante (bg-orange-500), sin bordes externos.
-           Ítems en texto blanco. Hover: bg-orange-600 + border-l-4 border-white
+           (SE QUITÓ COMPLETAMENTE "INICIAR SESIÓN" COMO FUE SOLICITADO)
+           w-64, bg-orange-500, sin bordes externos.
+           Hover: bg-orange-600 + border-l-4 border-white
            ========================================================================= -->
       <aside class="w-64 bg-orange-500 flex flex-col justify-between py-6 flex-shrink-0 select-none">
         <div class="flex flex-col space-y-1">
@@ -126,7 +211,7 @@
             </span>
           </div>
 
-          <!-- Ítems del Menú -->
+          <!-- 1. Reservar Espacio -->
           <button id="nav-btn-reservation" onclick="switchView('reservation')" class="w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out bg-orange-600 border-l-4 border-white shadow-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -134,13 +219,7 @@
             <span>Reservar Espacio</span>
           </button>
 
-          <button id="nav-btn-login" onclick="switchView('login')" class="w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-orange-600 hover:border-l-4 hover:border-white">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            <span>Acceso Institucional</span>
-          </button>
-
+          <!-- 2. Mis Solicitudes -->
           <button id="nav-btn-list" onclick="switchView('my-reservations')" class="w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-orange-600 hover:border-l-4 hover:border-white">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -148,6 +227,7 @@
             <span>Mis Solicitudes</span>
           </button>
 
+          <!-- 3. Arquitectura & UX -->
           <button id="nav-btn-audit" onclick="switchView('audit')" class="w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-orange-600 hover:border-l-4 hover:border-white">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -179,11 +259,10 @@
       <main class="flex-1 bg-gray-50 p-8 overflow-y-auto">
 
         <!-- =====================================================================
-             VISTA 1: RESERVA DE ESPACIOS (INCLUYE PROBLEMAS DE USABILIDAD INTENCIONALES)
+             VISTA 1: RESERVA DE ESPACIOS
              ===================================================================== -->
         <div id="view-reservation" class="max-w-6xl mx-auto">
           
-          <!-- Encabezado de Página -->
           <div class="mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -203,15 +282,13 @@
             </div>
           </div>
 
-          <!-- GRID PRINCIPAL DE RESERVA -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- COLUMNA IZQUIERDA: FORMULARIO BASE Y CALENDARIO ANTI-INTUITIVO (7 Cols) -->
+            <!-- COLUMNA IZQUIERDA: FORMULARIO BASE Y CALENDARIO (7 Cols) -->
             <div class="lg:col-span-7 flex flex-col">
 
               <!-- D. TARJETA DE CONTENIDO 1: PARÁMETROS DEL ESPACIO -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <!-- Cabecera con franja superior naranja de 3px -->
                 <div class="border-t-[3px] border-orange-500 p-6 pb-4">
                   <h2 class="text-lg font-extrabold tracking-tight text-gray-900">
                     1. Selección de Espacio Físico
@@ -223,32 +300,28 @@
 
                 <div class="p-6 pt-0 space-y-4">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- 2. ELIMINACIÓN DE HARD CODING: Renderizado Dinámico de Edificios -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Edificio / Sede
                       </label>
                       <select id="select-building" onchange="handleBuildingSelect(this.value)" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione Edificio...</option>
-                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
 
-                    <!-- 2. ELIMINACIÓN DE HARD CODING: Renderizado Dinámico de Salones -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Salón / Laboratorio
                       </label>
                       <select id="select-room" onchange="handleRoomSelect(this.value)" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione Salón...</option>
-                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- D. TARJETA DE CONTENIDO 2: CALENDARIO ANTI-INTUITIVO (PROBLEMÁTICA UX INTACTA) -->
+              <!-- D. TARJETA DE CONTENIDO 2: CALENDARIO ANTI-INTUITIVO (PRESERVADO) -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                 <div class="border-t-[3px] border-orange-500 p-6 pb-3">
                   <div class="flex items-center justify-between">
@@ -260,7 +333,6 @@
                         Selecciona el día programado en la malla académica.
                       </p>
                     </div>
-                    <!-- Título de mes -->
                     <span id="calendar-month-title" class="text-xs font-bold text-gray-900 uppercase tracking-wider px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg">
                       Noviembre 2026
                     </span>
@@ -273,7 +345,6 @@
                     <span id="selected-date-badge" class="font-bold text-gray-900">Ninguna fecha seleccionada</span>
                   </div>
 
-                  <!-- Encabezados de días de la semana -->
                   <div class="grid grid-cols-7 gap-1.5 text-center mb-2">
                     <span class="text-[11px] font-bold text-gray-500 py-1">L</span>
                     <span class="text-[11px] font-bold text-gray-500 py-1">M</span>
@@ -284,21 +355,17 @@
                     <span class="text-[11px] font-bold text-gray-500 py-1">D</span>
                   </div>
 
-                  <!-- 
-                    ANTIPATRÓN DE USABILIDAD PRESERVADO 100%:
-                    La grilla se genera iterando sobre SpaceConfig.calendarDays, pero
-                    todos los días comparten idénticas clases visuales sin revelar disponibilidad.
-                  -->
+                  <!-- Grilla de días (clases idénticas sin distinguir disponibilidad) -->
                   <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
                 </div>
               </div>
 
             </div>
 
-            <!-- COLUMNA DERECHA: FRANJAS HORARIAS OCULTAS (OBSERVER SUBSCRIBER) (5 Cols) -->
+            <!-- COLUMNA DERECHA: FRANJAS HORARIAS OCULTAS Y ACCIONES (5 Cols) -->
             <div class="lg:col-span-5 flex flex-col">
 
-              <!-- D. TARJETA DE CONTENIDO 3: HORARIO (CONTROLADO POR EL PATRÓN OBSERVER) -->
+              <!-- D. TARJETA DE CONTENIDO 3: HORARIO (CONTROLADO POR TIME SLOT OBSERVER) -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                 <div class="border-t-[3px] border-orange-500 p-6 pb-4">
                   <h2 class="text-lg font-extrabold tracking-tight text-gray-900">
@@ -310,7 +377,6 @@
                 </div>
 
                 <div class="p-6 pt-0">
-                  <!-- Placeholder que oculta el selector (ANTIPATRÓN PRESERVADO) -->
                   <div id="time-slot-placeholder" class="py-8 px-4 text-center border-2 border-dashed border-gray-200 rounded-lg">
                     <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -321,21 +387,18 @@
                     </p>
                   </div>
 
-                  <!-- Contenedor oculto en el DOM revelado por el TimeSlotObserver -->
                   <div id="hidden-time-slots" class="hidden space-y-4">
                     <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700">
                       <span class="font-bold text-gray-900">Horarios detectados para el espacio:</span>
                       <p class="text-[11px] text-gray-500 mt-0.5">Seleccione el bloque de inicio y finalización requerido.</p>
                     </div>
 
-                    <!-- 2. ELIMINACIÓN DE HARD CODING: Franjas dinámicas desde SpaceConfig -->
                     <div>
                       <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                         Franja de Reserva
                       </label>
                       <select id="select-time-slot" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
                         <option value="">Seleccione turno...</option>
-                        <!-- Opciones inyectadas dinámicamente desde SpaceConfig -->
                       </select>
                     </div>
 
@@ -349,7 +412,7 @@
                 </div>
               </div>
 
-              <!-- D. TARJETA DE CONTENIDO 4: CONFIRMACIÓN Y BOTONES -->
+              <!-- D. TARJETA DE CONTENIDO 4: ACCIONES -->
               <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                 <div class="border-t-[3px] border-orange-500 p-6 pb-4">
                   <h2 class="text-base font-extrabold tracking-tight text-gray-900">
@@ -358,7 +421,6 @@
                 </div>
 
                 <div class="p-6 pt-0 space-y-3">
-                  <!-- E. Botón Primario: Delegación limpia al ReservationService (SRP) -->
                   <button id="btn-submit-reservation" onclick="handleReservationSubmitUI()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3 px-4 text-sm flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -366,7 +428,6 @@
                     <span>Confirmar y Enviar Solicitud</span>
                   </button>
 
-                  <!-- E. Botón Secundario -->
                   <button id="btn-reset-reservation" onclick="handleReservationResetUI()" class="w-full bg-white border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 ease-in-out py-2.5 px-4 text-sm font-semibold text-center">
                     Limpiar Campos
                   </button>
@@ -381,77 +442,7 @@
 
 
         <!-- =====================================================================
-             VISTA 2: ACCESO INSTITUCIONAL (LOGIN CON FALLO SILENCIOSO PRESERVADO)
-             ===================================================================== -->
-        <div id="view-login" class="hidden max-w-md mx-auto pt-8">
-
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <div class="border-t-[3px] border-orange-500 p-8 pb-4 text-center">
-              <div class="w-12 h-12 bg-orange-500 rounded-xl mx-auto flex items-center justify-center shadow-sm mb-4">
-                <span class="text-white font-extrabold text-xl">U</span>
-              </div>
-              <h2 class="text-xl font-extrabold tracking-tight text-gray-900">
-                Portal de Autenticación
-              </h2>
-              <p class="text-xs font-normal text-gray-500 mt-1">
-                Ingreso al sistema centralizado de recursos UCompensar.
-              </p>
-            </div>
-
-            <div class="p-8 pt-2 space-y-5">
-              
-              <!-- Roles dinámicos desde SpaceConfig -->
-              <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Rol Institucional
-                </label>
-                <select id="login-role-select" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
-                  <!-- Opciones pobladas dinámicamente -->
-                </select>
-                <p class="text-[11px] text-gray-500 mt-1">
-                  Demostración del error: Seleccione <strong class="text-gray-700">"Estudiante"</strong> para simular el fallo silencioso.
-                </p>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Correo Institucional (@ucompensar.edu.co)
-                </label>
-                <input type="email" id="login-email" value="carlos.mendoza@ucompensar.edu.co" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200" placeholder="usuario@ucompensar.edu.co">
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Contraseña de Red
-                </label>
-                <input type="password" id="login-password" value="••••••••••••" class="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200">
-              </div>
-
-              <!-- ANTIPATRÓN PRESERVADO: Spinner 1.8s y parada silenciosa para Estudiantes -->
-              <button id="btn-login-submit" onclick="handleLoginAttempt()" class="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3.5 px-4 text-sm flex items-center justify-center gap-2">
-                <span id="login-btn-text">Ingresar al Sistema</span>
-                <span id="login-btn-spinner" class="hidden">
-                  <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-              </button>
-
-              <div class="text-center pt-2">
-                <a href="#" class="text-xs text-orange-500 hover:text-orange-600 font-medium transition-all duration-200 ease-in-out">
-                  ¿Olvidó sus credenciales de acceso institucional?
-                </a>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-
-
-        <!-- =====================================================================
-             VISTA 3: MIS SOLICITUDES (TABLA HISTÓRICA)
+             VISTA 2: MIS SOLICITUDES
              ===================================================================== -->
         <div id="view-my-reservations" class="hidden max-w-5xl mx-auto">
           <div class="mb-6 flex items-center justify-between">
@@ -519,18 +510,17 @@
 
 
         <!-- =====================================================================
-             VISTA 4: DIAGNÓSTICO ARQUITECTÓNICO & UX
+             VISTA 3: ARQUITECTURA & UX
              ===================================================================== -->
         <div id="view-audit" class="hidden max-w-4xl mx-auto">
           <div class="mb-6">
             <h2 class="text-2xl font-extrabold tracking-tight text-gray-900">Auditoría Arquitectónica y Patrones GoF</h2>
             <p class="text-sm font-normal text-gray-500 mt-1">
-              Registro del desacoplamiento SOLID y preservación de antipatrones de usabilidad.
+              Registro de desacoplamiento SOLID, preparación para patrones GoF y persistencia de antipatrones.
             </p>
           </div>
 
           <div class="space-y-6">
-            <!-- SRP y Desacoplamiento -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
@@ -546,7 +536,6 @@
               </div>
             </div>
 
-            <!-- Observer Pattern -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
@@ -562,7 +551,6 @@
               </div>
             </div>
 
-            <!-- SpaceConfig -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="border-t-[3px] border-orange-500 p-6">
                 <div class="flex items-start justify-between">
@@ -711,10 +699,8 @@
 
     /**
      * =========================================================================
-     * 3. OBSERVADOR DE FRANJAS HORARIAS (SUBSCRIBER DEL PATRÓN OBSERVER)
+     * OBSERVADOR DE FRANJAS HORARIAS (SUBSCRIBER)
      * =========================================================================
-     * Escucha eventos DATE_SELECTED y ROOM_SELECTED del ReservationSubject.
-     * MANTIENE INTACTO el antipatrón de ocultamiento hasta tener ambos parámetros.
      */
     class TimeSlotModuleObserver {
       constructor(placeholderId, containerId) {
@@ -741,8 +727,6 @@
       }
 
       evaluateVisibility() {
-        // ANTIPATRÓN DE USABILIDAD 3 PRESERVADO:
-        // Solo se revela si ambos están presentes; de lo contrario permanece oculto
         if (this.currentRoom && this.currentDate) {
           this.placeholder.classList.add('hidden');
           this.container.classList.remove('hidden');
@@ -753,16 +737,131 @@
       }
     }
 
-    // Instancia del observador conectada al bus de eventos de ReservationService
     let timeSlotObserverInstance = null;
 
     /**
      * =========================================================================
-     * 2. RENDERIZADO DINÁMICO DE SELECTORES DESDE SPACECONFIG (NO HARD CODING)
+     * GESTIÓN DE AUTENTICACIÓN Y CREDENCIALES INSTITUCIONALES
+     * =========================================================================
+     */
+    let currentUser = null;
+
+    function initLoginScreen() {
+      // 1. Cargar roles en el select
+      const roleSelect = document.getElementById('login-role-select');
+      roleSelect.innerHTML = '';
+      SpaceConfig.roles.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.label;
+        roleSelect.appendChild(opt);
+      });
+
+      // 2. Generar accesos directos a credenciales demo
+      const shortcutsContainer = document.getElementById('demo-credentials-shortcuts');
+      shortcutsContainer.innerHTML = '';
+      SpaceConfig.demoCredentials.forEach(cred => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = "py-2 px-2 text-xs font-semibold rounded-lg border border-gray-200 hover:border-orange-500 hover:text-orange-500 text-gray-700 bg-gray-50 transition-all duration-200 text-center";
+        btn.textContent = cred.role;
+        btn.onclick = () => fillCredentials(cred);
+        shortcutsContainer.appendChild(btn);
+      });
+
+      // Por defecto seleccionar Docente
+      const defaultCred = SpaceConfig.demoCredentials.find(c => c.role === 'Docente');
+      if (defaultCred) fillCredentials(defaultCred);
+    }
+
+    function fillCredentials(cred) {
+      document.getElementById('login-role-select').value = cred.role;
+      document.getElementById('login-email').value = cred.email;
+      document.getElementById('login-password').value = cred.password;
+      document.getElementById('role-feedback-note').textContent = cred.behavior;
+    }
+
+    function syncCredentialsByRole(roleName) {
+      const cred = SpaceConfig.demoCredentials.find(c => c.role === roleName);
+      if (cred) fillCredentials(cred);
+    }
+
+    /**
+     * =========================================================================
+     * ANTIPATRÓN 1 PRESERVADO EN EL LOGIN OBLIGATORIO
+     * =========================================================================
+     */
+    function handleLoginAttempt() {
+      const role = document.getElementById('login-role-select').value;
+      const btn = document.getElementById('btn-login-submit');
+      const btnText = document.getElementById('login-btn-text');
+      const btnSpinner = document.getElementById('login-btn-spinner');
+
+      btn.disabled = true;
+      btnText.textContent = "Verificando...";
+      btnSpinner.classList.remove('hidden');
+
+      if (role === 'Estudiante') {
+        // FALLO SILENCIOSO INTENCIONAL (PRESERVADO)
+        // El estudiante se queda bloqueado en la pantalla de inicio obligatoria
+        setTimeout(() => {
+          btn.disabled = false;
+          btnText.textContent = "Iniciar Sesión";
+          btnSpinner.classList.add('hidden');
+          // No hay toast, no hay error, no hay redirección
+        }, 1800);
+      } else {
+        // Docente o Administrador: Acceso exitoso
+        setTimeout(() => {
+          btn.disabled = false;
+          btnText.textContent = "Iniciar Sesión";
+          btnSpinner.classList.add('hidden');
+
+          const userCred = SpaceConfig.demoCredentials.find(c => c.role === role) || {
+            name: "Prof. Carlos Mendoza",
+            department: "Docente de Ingeniería",
+            initials: "CM"
+          };
+
+          currentUser = {
+            name: userCred.name,
+            role: userCred.department,
+            initials: userCred.initials
+          };
+
+          // Actualizar Header
+          document.getElementById('user-display-name').textContent = currentUser.name;
+          document.getElementById('user-display-role').textContent = currentUser.role;
+          document.getElementById('user-display-initials').textContent = currentUser.initials;
+
+          // Ocultar pantalla de login obligatoria
+          document.getElementById('mandatory-login-screen').classList.add('hidden');
+
+          // Mostrar Notificación Aprobada
+          NotificationFactory.show(
+            'aprobada',
+            'Sesión Autorizada',
+            `Bienvenido al sistema institucional, ${currentUser.name}.`
+          );
+
+          switchView('reservation');
+        }, 1200);
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('mandatory-login-screen').classList.remove('hidden');
+      const defaultCred = SpaceConfig.demoCredentials.find(c => c.role === 'Docente');
+      if (defaultCred) fillCredentials(defaultCred);
+    }
+
+    /**
+     * =========================================================================
+     * SELECTORES DINÁMICOS DESDE SPACECONFIG
      * =========================================================================
      */
     function renderDynamicSelectorsFromConfig() {
-      // 1. Selector de Edificios
       const buildingSelect = document.getElementById('select-building');
       buildingSelect.innerHTML = '<option value="">Seleccione Edificio...</option>';
       SpaceConfig.buildings.forEach(b => {
@@ -772,7 +871,6 @@
         buildingSelect.appendChild(opt);
       });
 
-      // 2. Selector de Salones
       const roomSelect = document.getElementById('select-room');
       roomSelect.innerHTML = '<option value="">Seleccione Salón...</option>';
       SpaceConfig.rooms.forEach(r => {
@@ -782,7 +880,6 @@
         roomSelect.appendChild(opt);
       });
 
-      // 3. Selector de Franjas Horarias
       const slotSelect = document.getElementById('select-time-slot');
       slotSelect.innerHTML = '<option value="">Seleccione turno...</option>';
       SpaceConfig.timeSlots.forEach(s => {
@@ -792,20 +889,6 @@
         slotSelect.appendChild(opt);
       });
 
-      // 4. Selector de Roles de Login
-      const roleSelect = document.getElementById('login-role-select');
-      if (roleSelect) {
-        roleSelect.innerHTML = '';
-        SpaceConfig.roles.forEach(role => {
-          const opt = document.createElement('option');
-          opt.value = role.id;
-          opt.textContent = role.label;
-          if (role.id === 'Docente') opt.selected = true;
-          roleSelect.appendChild(opt);
-        });
-      }
-
-      // Metadatos
       if (SpaceConfig.metadata) {
         const periodEl = document.getElementById('header-period');
         const campusEl = document.getElementById('header-campus');
@@ -818,7 +901,7 @@
 
     /**
      * =========================================================================
-     * RENDERIZADO DEL CALENDARIO DESDE SPACECONFIG (ANTIPATRÓN 2 PRESERVADO)
+     * CALENDARIO DESDE SPACECONFIG (ANTIPATRÓN 2 PRESERVADO)
      * =========================================================================
      */
     let uiSelectedDate = null;
@@ -831,7 +914,6 @@
       SpaceConfig.calendarDays.forEach(item => {
         const dayBtn = document.createElement('button');
         dayBtn.type = 'button';
-        // Clases idénticas para disponibles y ocupados (ANTIPATRÓN 2 PRESERVADO)
         dayBtn.className = "calendar-day-btn py-3 px-2 text-center text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-orange-500 transition-all duration-200 ease-in-out focus:outline-none";
         dayBtn.textContent = item.day;
         dayBtn.dataset.day = item.day;
@@ -849,7 +931,6 @@
 
           document.getElementById('selected-date-badge').textContent = `Noviembre ${item.day}, 2026`;
 
-          // 3. PATRÓN OBSERVER: Emitir evento DATE_SELECTED a través del Subject
           reservationService.selectDate(uiSelectedDate);
         });
 
@@ -863,16 +944,13 @@
 
     function handleRoomSelect(roomId) {
       uiSelectedRoom = roomId;
-      // 3. PATRÓN OBSERVER: Emitir evento ROOM_SELECTED a través del Subject
       reservationService.selectRoom(roomId);
     }
 
     /**
      * =========================================================================
-     * 1. DELEGACIÓN SRP: CONTROLADOR DE VISTA DE RESERVA
+     * DELEGACIÓN SRP AL RESERVATIONSERVICE
      * =========================================================================
-     * La UI únicamente extrae valores del DOM y delega la validación completa
-     * y procesamiento de negocio a ReservationService.
      */
     function handleReservationSubmitUI() {
       const slotVal = document.getElementById('select-time-slot').value;
@@ -883,23 +961,16 @@
         date: uiSelectedDate,
         slot: slotVal,
         reason: reasonVal,
-        requesterName: currentUser.name
+        requesterName: currentUser ? currentUser.name : "Usuario Anónimo"
       };
 
-      // Delegación de Responsabilidad (SRP)
       const result = reservationService.processReservation(payload);
 
       if (result.success) {
-        // Notificación de aprobación mediante Factory Method
         NotificationFactory.show('aprobada', result.title, result.message);
-
-        // Actualizar tabla histórica en UI
         addReservationToUITable(result.reservation);
-
-        // Limpiar formulario UI
         handleReservationResetUI();
       } else {
-        // Notificación de rechazo mediante Factory Method (usando border-gray-800 sin rojo)
         NotificationFactory.show('rechazada', result.title, result.message);
       }
     }
@@ -918,7 +989,6 @@
         btn.classList.add('text-gray-700', 'bg-white', 'border-gray-200');
       });
 
-      // 3. Notificar reset al Subject para que el TimeSlotModuleObserver oculte la sección
       reservationService.resetForm();
     }
 
@@ -948,68 +1018,11 @@
 
     /**
      * =========================================================================
-     * ANTIPATRÓN 1 PRESERVADO: LOGIN FALLIDO SILENCIOSO (ESTUDIANTES)
-     * =========================================================================
-     */
-    let currentUser = {
-      name: "Prof. Carlos Mendoza",
-      role: "Docente de Ingeniería",
-      initials: "CM"
-    };
-
-    function handleLoginAttempt() {
-      const role = document.getElementById('login-role-select').value;
-      const btn = document.getElementById('btn-login-submit');
-      const btnText = document.getElementById('login-btn-text');
-      const btnSpinner = document.getElementById('login-btn-spinner');
-
-      btn.disabled = true;
-      btnText.textContent = "Verificando Credenciales...";
-      btnSpinner.classList.remove('hidden');
-
-      if (role === 'Estudiante') {
-        // FALLO SILENCIOSO INTENCIONAL (PRESERVADO INTACTO)
-        setTimeout(() => {
-          btn.disabled = false;
-          btnText.textContent = "Ingresar al Sistema";
-          btnSpinner.classList.add('hidden');
-          // Sin toast, sin mensaje, sin redirección
-        }, 1800);
-      } else {
-        // Docente / Administrador
-        setTimeout(() => {
-          btn.disabled = false;
-          btnText.textContent = "Ingresar al Sistema";
-          btnSpinner.classList.add('hidden');
-
-          currentUser = {
-            name: role === 'Docente' ? "Prof. Carlos Mendoza" : "Ing. Laura Pardo (Admin)",
-            role: role === 'Docente' ? "Docente de Ingeniería" : "Coordinación Infraestructura",
-            initials: role === 'Docente' ? "CM" : "LP"
-          };
-
-          document.getElementById('user-display-name').textContent = currentUser.name;
-          document.getElementById('user-display-role').textContent = currentUser.role;
-          document.getElementById('user-display-initials').textContent = currentUser.initials;
-
-          NotificationFactory.show(
-            'aprobada',
-            'Sesión Autorizada',
-            `Bienvenido al sistema institucional, ${currentUser.name}.`
-          );
-
-          switchView('reservation');
-        }, 1200);
-      }
-    }
-
-    /**
-     * =========================================================================
-     * NAVEGACIÓN ENTRE VISTAS
+     * NAVEGACIÓN EN SIDEBAR (SOLO MÓDULOS DE APLICACIÓN)
      * =========================================================================
      */
     function switchView(viewName) {
-      ['reservation', 'login', 'my-reservations', 'audit'].forEach(v => {
+      ['reservation', 'my-reservations', 'audit'].forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.add('hidden');
       });
@@ -1018,7 +1031,6 @@
 
       const buttons = [
         { id: 'nav-btn-reservation', view: 'reservation' },
-        { id: 'nav-btn-login', view: 'login' },
         { id: 'nav-btn-list', view: 'my-reservations' },
         { id: 'nav-btn-audit', view: 'audit' }
       ];
@@ -1037,15 +1049,18 @@
 
     /**
      * =========================================================================
-     * INICIALIZACIÓN DEL SISTEMA Y VINCULACIÓN DEL PATRÓN OBSERVER
+     * INICIALIZACIÓN
      * =========================================================================
      */
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Renderizar dinámicamente desde SpaceConfig
+      // 1. Iniciar pantalla de login obligatoria
+      initLoginScreen();
+
+      // 2. Renderizar dinámicamente desde SpaceConfig
       renderDynamicSelectorsFromConfig();
       renderCalendarFromConfig();
 
-      // 2. Conectar el observador de franjas horarias al Subject de eventos
+      // 3. Conectar el observador de franjas horarias
       timeSlotObserverInstance = new TimeSlotModuleObserver(
         'time-slot-placeholder',
         'hidden-time-slots'

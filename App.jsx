@@ -1,34 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import SpaceConfig from './SpaceConfig';
-import { ReservationService, ReservationEvents, ReservationSubject } from './ReservationService';
+import { ReservationService, ReservationEvents } from './ReservationService';
 import { NotificationFactory } from './NotificationFactory';
 
-/**
- * =========================================================================
- * COMPONENTE REACT: UCOMPENSAR ESPACIOS (REFACTORIZADO CON SOLID & GOF)
- * =========================================================================
- * 1. SRP: Validación y lógica de reserva delegada a ReservationService.
- * 2. Eliminación de Hard Coding: Interfaz alimentada dinámicamente desde SpaceConfig.
- * 3. Patrón Observer: Interacción calendario-horarios coordinada a través de ReservationSubject.
- * 4. Antipatrones de usabilidad PRESERVADOS (Login silencioso, calendario ciego, franjas ocultas).
- * 5. NotificationFactory intacto.
- */
-
-// Instancia única del servicio y bus de eventos
 const reservationServiceInstance = new ReservationService(SpaceConfig);
 const reservationEventBus = reservationServiceInstance.getEventBus();
 
 export default function App() {
+  // Estado de Autenticación Obligatoria (Inicia como false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Formulario de Login
+  const [loginRole, setLoginRole] = useState('Docente');
+  const [loginEmail, setLoginEmail] = useState('carlos.mendoza@ucompensar.edu.co');
+  const [loginPassword, setLoginPassword] = useState('password123');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [feedbackNote, setFeedbackNote] = useState('Acceso Autorizado al Sistema de Reservas.');
+
+  // Vista activa de la app
   const [activeView, setActiveView] = useState('reservation');
 
-  // Usuario activo
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Prof. Carlos Mendoza',
-    role: 'Docente de Ingeniería',
-    initials: 'CM'
-  });
-
-  // Notificaciones Toasts (Factory Method)
+  // Notificaciones Toasts
   const [toasts, setToasts] = useState([]);
 
   const addNotification = (type, title, message) => {
@@ -43,14 +36,68 @@ export default function App() {
     setToasts((current) => current.filter((t) => t.id !== id));
   };
 
-  // Estado del Formulario
+  // Sincronizar credenciales al cambiar de rol en el login
+  const handleRoleChange = (roleId) => {
+    setLoginRole(roleId);
+    const cred = SpaceConfig.demoCredentials.find((c) => c.role === roleId);
+    if (cred) {
+      setLoginEmail(cred.email);
+      setLoginPassword(cred.password);
+      setFeedbackNote(cred.behavior);
+    }
+  };
+
+  const handleShortcutClick = (cred) => {
+    setLoginRole(cred.role);
+    setLoginEmail(cred.email);
+    setLoginPassword(cred.password);
+    setFeedbackNote(cred.behavior);
+  };
+
+  // Manejo de Login con Antipatrón 1 Preservado
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+
+    if (loginRole === 'Estudiante') {
+      // FALLO SILENCIOSO INTENCIONAL (Estudiante atrapado en login)
+      setTimeout(() => {
+        setLoginLoading(false);
+      }, 1800);
+    } else {
+      setTimeout(() => {
+        setLoginLoading(false);
+        const cred = SpaceConfig.demoCredentials.find((c) => c.role === loginRole) || {
+          name: 'Prof. Carlos Mendoza',
+          department: 'Docente de Ingeniería',
+          initials: 'CM'
+        };
+
+        const user = {
+          name: cred.name,
+          role: cred.department,
+          initials: cred.initials
+        };
+
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        addNotification('aprobada', 'Sesión Autorizada', `Bienvenido al sistema institucional, ${user.name}.`);
+      }, 1200);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    handleRoleChange('Docente');
+  };
+
+  // Estado del Formulario de Reserva
   const [selectedBuilding, setSelectedBuilding] = useState('');
   const [selectedRoom, setSelectedRoom] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [purpose, setPurpose] = useState('');
-
-  // 3. PATRÓN OBSERVER (SUBSCRIBER): Visibilidad de las franjas horarias
   const [isTimeSlotVisible, setIsTimeSlotVisible] = useState(false);
 
   useEffect(() => {
@@ -58,7 +105,6 @@ export default function App() {
     let currentDate = null;
 
     const evaluate = () => {
-      // Regla de negocio preservada: Solo visible si ambos están presentes
       setIsTimeSlotVisible(Boolean(currentRoom && currentDate));
     };
 
@@ -85,44 +131,15 @@ export default function App() {
     };
   }, []);
 
-  // 1. ANTIPATRÓN PRESERVADO: Login silencioso para estudiantes
-  const [loginRole, setLoginRole] = useState('Docente');
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    setLoginLoading(true);
-
-    if (loginRole === 'Estudiante') {
-      setTimeout(() => {
-        setLoginLoading(false);
-        // Cero retroalimentación (Antipatrón preservado)
-      }, 1800);
-    } else {
-      setTimeout(() => {
-        setLoginLoading(false);
-        const newName = loginRole === 'Docente' ? 'Prof. Carlos Mendoza' : 'Ing. Laura Pardo (Admin)';
-        const newRole = loginRole === 'Docente' ? 'Docente de Ingeniería' : 'Coordinación Infraestructura';
-        const newInitials = loginRole === 'Docente' ? 'CM' : 'LP';
-
-        setCurrentUser({ name: newName, role: newRole, initials: newInitials });
-        addNotification('aprobada', 'Sesión Autorizada', `Bienvenido al sistema institucional, ${newName}.`);
-        setActiveView('reservation');
-      }, 1200);
-    }
-  };
-
-  // 1. DELEGACIÓN SRP: Envío de Reserva a ReservationService
   const handleReservationSubmit = () => {
     const payload = {
       roomId: selectedRoom,
       date: selectedDate ? `2026-11-${String(selectedDate).padStart(2, '0')}` : null,
       slot: selectedSlot,
       reason: purpose,
-      requesterName: currentUser.name
+      requesterName: currentUser?.name || 'Docente'
     };
 
-    // La UI delega la validación completa a la capa de servicio
     const result = reservationServiceInstance.processReservation(payload);
 
     if (result.success) {
@@ -145,20 +162,114 @@ export default function App() {
   const handleDateClick = (dayNumber) => {
     setSelectedDate(dayNumber);
     const formatted = `2026-11-${String(dayNumber).padStart(2, '0')}`;
-    // 3. Emisión de evento al Subject
     reservationServiceInstance.selectDate(formatted);
   };
 
   const handleRoomChange = (roomId) => {
     setSelectedRoom(roomId);
-    // 3. Emisión de evento al Subject
     reservationServiceInstance.selectRoom(roomId);
   };
 
+  // =========================================================================
+  // RENDER: PANTALLA DE LOGIN OBLIGATORIO (GATEKEEPER)
+  // =========================================================================
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 font-['Inter',sans-serif] antialiased">
+        <div className="w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden my-auto">
+          <div className="border-t-[3px] border-orange-500 p-8 pb-4 text-center">
+            <div className="w-14 h-14 bg-orange-500 rounded-xl mx-auto flex items-center justify-center shadow-md mb-4">
+              <span className="text-white font-extrabold text-2xl">U</span>
+            </div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
+              UCompensar <span className="text-orange-500 font-bold">Espacios</span>
+            </h1>
+            <p className="text-xs font-normal text-gray-500 mt-1">
+              Acceso Institucional Obligatorio - Sistema de Asignación de Recursos
+            </p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="p-8 pt-2 space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                Rol Institucional
+              </label>
+              <select
+                value={loginRole}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200"
+              >
+                {SpaceConfig.roles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                Correo Institucional (@ucompensar.edu.co)
+              </label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                Contraseña de Red
+              </label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3.5 px-4 text-sm flex items-center justify-center gap-2"
+            >
+              {loginLoading ? <span>Verificando...</span> : <span>Iniciar Sesión</span>}
+            </button>
+
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2">
+                Credenciales Demo (Click para auto-completar):
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {SpaceConfig.demoCredentials.map((c) => (
+                  <button
+                    key={c.role}
+                    type="button"
+                    onClick={() => handleShortcutClick(c)}
+                    className="py-2 px-2 text-xs font-semibold rounded-lg border border-gray-200 hover:border-orange-500 hover:text-orange-500 text-gray-700 bg-gray-50 transition-all duration-200 text-center"
+                  >
+                    {c.role}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-2 italic leading-relaxed">
+                {feedbackNote}
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // RENDER: APLICACIÓN PRINCIPAL (DESBLOQUEADA TRAS LOGIN)
+  // =========================================================================
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden font-['Inter',sans-serif] bg-gray-50 text-gray-900 antialiased">
       
-      {/* NAVBAR */}
+      {/* HEADER NAVBAR */}
       <header className="h-16 w-full bg-white border-b-4 border-orange-500 flex items-center justify-between px-8 z-30 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center shadow-sm">
@@ -180,14 +291,21 @@ export default function App() {
             <span>Periodo Académico Activo: <strong className="text-gray-900">{SpaceConfig.metadata.academicPeriod}</strong></span>
           </div>
 
-          <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
+          <div className="flex items-center gap-4 pl-6 border-l border-gray-100">
             <div className="text-right hidden sm:block">
               <p className="text-xs font-semibold text-gray-900 leading-tight">{currentUser.name}</p>
               <p className="text-[11px] text-gray-500 font-normal">{currentUser.role}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-500 flex items-center justify-center text-orange-500 font-bold text-sm shadow-sm transition-all duration-200 ease-in-out hover:shadow-md cursor-pointer">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-500 flex items-center justify-center text-orange-500 font-bold text-sm shadow-sm">
               <span>{currentUser.initials}</span>
             </div>
+
+            <button
+              onClick={handleLogout}
+              className="text-xs text-gray-500 hover:text-orange-500 border border-gray-200 hover:border-orange-500 py-1.5 px-3 rounded-lg transition-all duration-200 bg-white shadow-sm"
+            >
+              Salir
+            </button>
           </div>
         </div>
       </header>
@@ -195,7 +313,7 @@ export default function App() {
       {/* BODY LAYOUT */}
       <div className="flex flex-1 overflow-hidden">
         
-        {/* SIDEBAR */}
+        {/* SIDEBAR: SIN INICIAR SESIÓN */}
         <aside className="w-64 bg-orange-500 flex flex-col justify-between py-6 flex-shrink-0 select-none">
           <div className="flex flex-col space-y-1">
             <div className="px-6 pb-3">
@@ -210,22 +328,25 @@ export default function App() {
                 activeView === 'reservation' ? 'bg-orange-600 border-l-4 border-white shadow-sm' : 'hover:bg-orange-600 hover:border-l-4 hover:border-white'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
               <span>Reservar Espacio</span>
             </button>
 
             <button
-              onClick={() => setActiveView('login')}
+              onClick={() => setActiveView('my-reservations')}
               className={`w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out ${
-                activeView === 'login' ? 'bg-orange-600 border-l-4 border-white shadow-sm' : 'hover:bg-orange-600 hover:border-l-4 hover:border-white'
+                activeView === 'my-reservations' ? 'bg-orange-600 border-l-4 border-white shadow-sm' : 'hover:bg-orange-600 hover:border-l-4 hover:border-white'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
-              <span>Acceso Institucional</span>
+              <span>Mis Solicitudes</span>
+            </button>
+
+            <button
+              onClick={() => setActiveView('audit')}
+              className={`w-full text-left px-6 py-3.5 text-sm font-semibold text-white flex items-center gap-3 transition-all duration-200 ease-in-out ${
+                activeView === 'audit' ? 'bg-orange-600 border-l-4 border-white shadow-sm' : 'hover:bg-orange-600 hover:border-l-4 hover:border-white'
+              }`}
+            >
+              <span>Arquitectura & UX</span>
             </button>
           </div>
 
@@ -236,13 +357,13 @@ export default function App() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => addNotification('aprobada', 'Notificación Aprobada', 'Demostración de toast con borde naranja.')}
-                className="w-full py-2 px-3 text-xs font-semibold text-orange-500 bg-white rounded-lg shadow-sm hover:bg-orange-50 transition-all duration-200 ease-in-out text-center"
+                className="w-full py-2 px-3 text-xs font-semibold text-orange-500 bg-white rounded-lg shadow-sm hover:bg-orange-50 transition-all duration-200 text-center"
               >
                 Toast Aprobada
               </button>
               <button
-                onClick={() => addNotification('rechazada', 'Notificación Rechazada', 'Demostración con borde gris oscuro (#1F2937).')}
-                className="w-full py-2 px-3 text-xs font-semibold text-gray-900 bg-white rounded-lg shadow-sm hover:bg-gray-100 transition-all duration-200 ease-in-out text-center"
+                onClick={() => addNotification('rechazada', 'Notificación Rechazada', 'Demostración con borde gris carbón (#1F2937).')}
+                className="w-full py-2 px-3 text-xs font-semibold text-gray-900 bg-white rounded-lg shadow-sm hover:bg-gray-100 transition-all duration-200 text-center"
               >
                 Toast Rechazada
               </button>
@@ -250,7 +371,7 @@ export default function App() {
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
+        {/* MAIN AREA */}
         <main className="flex-1 bg-gray-50 p-8 overflow-y-auto">
           {activeView === 'reservation' && (
             <div className="max-w-6xl mx-auto">
@@ -264,9 +385,8 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* COLUMNA IZQUIERDA */}
                 <div className="lg:col-span-7 flex flex-col">
-                  {/* CARD 1: Espacios Dinámicos desde SpaceConfig */}
+                  {/* CARD 1 */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                     <div className="border-t-[3px] border-orange-500 p-6 pb-4">
                       <h2 className="text-lg font-extrabold tracking-tight text-gray-900">
@@ -311,7 +431,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* CARD 2: Calendario Dinámico (Antipatrón Preservado) */}
+                  {/* CARD 2: CALENDARIO ANTI-INTUITIVO (PRESERVADO) */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                     <div className="border-t-[3px] border-orange-500 p-6 pb-3 flex items-center justify-between">
                       <h2 className="text-lg font-extrabold tracking-tight text-gray-900">
@@ -329,7 +449,6 @@ export default function App() {
                         ))}
                       </div>
 
-                      {/* Renderizado dinámico desde SpaceConfig.calendarDays con estilos idénticos */}
                       <div className="grid grid-cols-7 gap-2">
                         {SpaceConfig.calendarDays.map((item) => {
                           const isSelected = selectedDate === item.day;
@@ -338,7 +457,7 @@ export default function App() {
                               key={item.day}
                               type="button"
                               onClick={() => handleDateClick(item.day)}
-                              className={`py-3 px-2 text-center text-xs font-semibold rounded-lg shadow-sm transition-all duration-200 ease-in-out focus:outline-none ${
+                              className={`py-3 px-2 text-center text-xs font-semibold rounded-lg shadow-sm transition-all duration-200 focus:outline-none ${
                                 isSelected
                                   ? 'border-orange-500 bg-orange-50 text-orange-500'
                                   : 'text-gray-700 bg-white border border-gray-200 hover:border-orange-500'
@@ -355,7 +474,7 @@ export default function App() {
 
                 {/* COLUMNA DERECHA */}
                 <div className="lg:col-span-5 flex flex-col">
-                  {/* CARD 3: Franjas Horarias (Controladas por Observer) */}
+                  {/* CARD 3: FRANJAS OCULTAS */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                     <div className="border-t-[3px] border-orange-500 p-6 pb-4">
                       <h2 className="text-lg font-extrabold tracking-tight text-gray-900">
@@ -406,7 +525,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* CARD 4: Acciones */}
+                  {/* CARD 4: ACCIONES */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                     <div className="border-t-[3px] border-orange-500 p-6 pb-4">
                       <h2 className="text-base font-extrabold tracking-tight text-gray-900">
@@ -435,47 +554,27 @@ export default function App() {
             </div>
           )}
 
-          {/* VISTA 2: LOGIN */}
-          {activeView === 'login' && (
-            <div className="max-w-md mx-auto pt-8">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <div className="border-t-[3px] border-orange-500 p-8 pb-4 text-center">
-                  <h2 className="text-xl font-extrabold tracking-tight text-gray-900">
-                    Portal de Autenticación
-                  </h2>
-                </div>
+          {activeView === 'my-reservations' && (
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 mb-6">Historial de Solicitudes</h2>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <p className="text-xs text-gray-500">Consulta los vouchers y autorizaciones radicadas en el sistema.</p>
+              </div>
+            </div>
+          )}
 
-                <form onSubmit={handleLoginSubmit} className="p-8 pt-2 space-y-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Rol Institucional
-                    </label>
-                    <select
-                      value={loginRole}
-                      onChange={(e) => setLoginRole(e.target.value)}
-                      className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-3 focus:outline-none focus:border-orange-500 transition-all duration-200"
-                    >
-                      {SpaceConfig.roles.map((r) => (
-                        <option key={r.id} value={r.id}>{r.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loginLoading}
-                    className="w-full bg-orange-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out hover:bg-orange-600 py-3.5 px-4 text-sm flex items-center justify-center gap-2"
-                  >
-                    {loginLoading ? <span>Verificando Credenciales...</span> : <span>Ingresar al Sistema</span>}
-                  </button>
-                </form>
+          {activeView === 'audit' && (
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 mb-6">Auditoría Arquitectónica</h2>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <p className="text-xs text-gray-500">Patrones Observer, Factory Method y SRP activos.</p>
               </div>
             </div>
           )}
         </main>
       </div>
 
-      {/* TOASTS FLOTANTES */}
+      {/* TOASTS CONTAINER */}
       <div className="fixed top-20 right-6 flex flex-col gap-3 z-50 pointer-events-none">
         {toasts.map((toast) => {
           const styles = toast.getStyles();
